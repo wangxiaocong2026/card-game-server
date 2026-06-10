@@ -767,6 +767,210 @@ button:disabled {
     transform: translateX(-50%);
 }
 
+.table-social {
+    position: absolute;
+    z-index: 12;
+    right: clamp(12px, 2.4vw, 28px);
+    bottom: 136px;
+    width: min(300px, calc(100vw - 32px));
+    display: grid;
+    gap: 8px;
+    pointer-events: none;
+}
+
+.chat-feed {
+    display: grid;
+    align-content: end;
+    gap: 6px;
+    max-height: 210px;
+    overflow: hidden;
+}
+
+.chat-bubble {
+    justify-self: end;
+    max-width: 100%;
+    display: grid;
+    grid-template-columns: auto auto;
+    align-items: center;
+    gap: 4px 8px;
+    padding: 8px 10px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    background: rgba(7, 22, 18, 0.82);
+    color: #fff;
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.24);
+    pointer-events: auto;
+}
+
+.chat-bubble.mine {
+    border-color: rgba(244, 206, 119, 0.42);
+    background: rgba(52, 39, 15, 0.86);
+}
+
+.chat-name {
+    grid-column: 1 / -1;
+    max-width: 180px;
+    overflow: hidden;
+    color: rgba(255, 255, 255, 0.66);
+    font-size: 0.72rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.emoji-message {
+    font-size: 2rem;
+    line-height: 1;
+}
+
+.chat-label,
+.text-message {
+    color: #fff5cf;
+    font-size: 0.86rem;
+    font-weight: 800;
+}
+
+.voice-message {
+    min-width: 104px;
+    min-height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 0 12px;
+    border: 1px solid rgba(244, 206, 119, 0.42);
+    border-radius: 999px;
+    background: rgba(244, 206, 119, 0.16);
+    color: #fff5cf;
+    font-weight: 900;
+}
+
+.voice-message.playing {
+    background: rgba(244, 206, 119, 0.28);
+    box-shadow: 0 0 0 3px rgba(244, 206, 119, 0.12);
+}
+
+.voice-wave {
+    display: inline-block;
+    color: #ffe19a;
+    letter-spacing: 1px;
+}
+
+.social-controls {
+    justify-self: end;
+    display: flex;
+    gap: 8px;
+    pointer-events: auto;
+}
+
+.social-icon-btn,
+.voice-record-btn {
+    min-height: 40px;
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    border-radius: 8px;
+    background: rgba(5, 22, 18, 0.84);
+    color: #fff4ce;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
+}
+
+.social-icon-btn {
+    width: 42px;
+    font-size: 1.2rem;
+    font-weight: 900;
+}
+
+.voice-record-btn {
+    min-width: 116px;
+    padding: 0 14px;
+    font-weight: 900;
+    user-select: none;
+    touch-action: none;
+}
+
+.voice-record-btn.recording {
+    border-color: rgba(201, 77, 63, 0.78);
+    background: rgba(115, 30, 26, 0.92);
+}
+
+.emoji-panel {
+    justify-self: end;
+    width: min(292px, 100%);
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 7px;
+    padding: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 8px;
+    background: rgba(8, 24, 22, 0.96);
+    box-shadow: var(--shadow);
+    pointer-events: auto;
+}
+
+.emoji-panel[hidden] {
+    display: none;
+}
+
+.emoji-choice {
+    min-height: 54px;
+    display: grid;
+    place-items: center;
+    gap: 2px;
+    padding: 5px 4px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 7px;
+    background: rgba(255, 255, 255, 0.07);
+    color: #fff4ce;
+}
+
+.emoji-choice span {
+    font-size: 1.5rem;
+    line-height: 1;
+}
+
+.emoji-choice small {
+    max-width: 100%;
+    overflow: hidden;
+    font-size: 0.68rem;
+    font-weight: 800;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.voice-recording-hint {
+    justify-self: end;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 999px;
+    background: rgba(115, 30, 26, 0.92);
+    color: #fff;
+    font-size: 0.86rem;
+    box-shadow: var(--shadow);
+    pointer-events: none;
+}
+
+.voice-recording-hint[hidden] {
+    display: none;
+}
+
+.voice-pulse {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #ff6b5d;
+    box-shadow: 0 0 0 0 rgba(255, 107, 93, 0.5);
+    animation: voicePulse 1s infinite;
+}
+
+@keyframes voicePulse {
+    70% {
+        box-shadow: 0 0 0 9px rgba(255, 107, 93, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(255, 107, 93, 0);
+    }
+}
+
 .my-hand-area {
     position: absolute;
     z-index: 8;
@@ -1195,6 +1399,11 @@ button:disabled {
         min-height: 62px;
     }
 
+    .table-social {
+        bottom: 124px;
+        width: min(280px, calc(100vw - 28px));
+    }
+
     .opponent-left {
         left: 18px;
         top: 236px;
@@ -1447,6 +1656,45 @@ button:disabled {
         line-height: 1.4;
     }
 
+    .table-social {
+        right: 10px;
+        bottom: 118px;
+        width: min(244px, calc(100vw - 20px));
+        gap: 6px;
+    }
+
+    .chat-feed {
+        max-height: 132px;
+    }
+
+    .chat-bubble {
+        padding: 6px 8px;
+    }
+
+    .emoji-panel {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 5px;
+        padding: 7px;
+    }
+
+    .emoji-choice {
+        min-height: 46px;
+    }
+
+    .emoji-choice span {
+        font-size: 1.3rem;
+    }
+
+    .social-icon-btn,
+    .voice-record-btn {
+        min-height: 36px;
+    }
+
+    .voice-record-btn {
+        min-width: 104px;
+        padding: 0 10px;
+    }
+
     .my-hand-area {
         left: 10px;
         right: 10px;
@@ -1522,6 +1770,75 @@ body.landscape-mode .trump-inline {
 
 body.landscape-mode .game-hud > .btn {
     min-height: 34px;
+}
+
+body.landscape-mode .table-social {
+    right: 10px;
+    bottom: 86px;
+    width: 228px;
+    gap: 5px;
+}
+
+body.landscape-mode .chat-feed {
+    max-height: 94px;
+    gap: 4px;
+}
+
+body.landscape-mode .chat-bubble {
+    padding: 5px 7px;
+    gap: 2px 6px;
+}
+
+body.landscape-mode .chat-name {
+    font-size: 0.66rem;
+}
+
+body.landscape-mode .emoji-message {
+    font-size: 1.55rem;
+}
+
+body.landscape-mode .chat-label {
+    font-size: 0.74rem;
+}
+
+body.landscape-mode .social-controls {
+    gap: 5px;
+}
+
+body.landscape-mode .social-icon-btn,
+body.landscape-mode .voice-record-btn {
+    min-height: 32px;
+}
+
+body.landscape-mode .social-icon-btn {
+    width: 34px;
+    font-size: 1rem;
+}
+
+body.landscape-mode .voice-record-btn {
+    min-width: 90px;
+    padding: 0 8px;
+    font-size: 0.78rem;
+}
+
+body.landscape-mode .emoji-panel {
+    width: 214px;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 4px;
+    padding: 6px;
+}
+
+body.landscape-mode .emoji-choice {
+    min-height: 34px;
+    padding: 3px;
+}
+
+body.landscape-mode .emoji-choice span {
+    font-size: 1.05rem;
+}
+
+body.landscape-mode .emoji-choice small {
+    display: none;
 }
 
 body.landscape-mode .table-felt {

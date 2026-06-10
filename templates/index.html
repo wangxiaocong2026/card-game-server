@@ -165,6 +165,22 @@
                     </div>
                 </div>
 
+                <section class="table-social" aria-label="牌桌聊天">
+                    <div id="chatFeed" class="chat-feed" aria-live="polite"></div>
+                    <div class="social-controls">
+                        <button id="emojiToggleBtn" class="social-icon-btn" type="button" onclick="toggleEmojiPanel()" aria-label="发送表情">☺</button>
+                        <button id="voiceRecordBtn" class="voice-record-btn" type="button" aria-label="按住录制语音">
+                            <span id="voiceRecordText">按住说话</span>
+                        </button>
+                    </div>
+                    <div id="emojiPanel" class="emoji-panel" hidden></div>
+                    <div id="voiceRecordingHint" class="voice-recording-hint" hidden>
+                        <span class="voice-pulse"></span>
+                        <strong>正在录音</strong>
+                        <span id="voiceRecordingTime">0"</span>
+                    </div>
+                </section>
+
                 <section class="my-hand-area">
                     <div class="my-info">
                         <div>

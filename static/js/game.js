@@ -28,6 +28,24 @@ const COLOR_NAMES = {
 const COLOR_ORDER = { a: 0, b: 1, c: 2, d: 3, z: 4 };
 const FIXED_TRUMP_NAMES = new Set(["5", "3", "2"]);
 const FIXED_TRUMP_ORDER = { "5": 0, "3": 1, "2": 2 };
+const CHAT_EMOJIS = [
+    { icon: "👍", label: "好牌" },
+    { icon: "👏", label: "漂亮" },
+    { icon: "😄", label: "开心" },
+    { icon: "🤔", label: "思考" },
+    { icon: "😅", label: "手滑" },
+    { icon: "🔥", label: "压制" },
+    { icon: "💣", label: "炸场" },
+    { icon: "🎯", label: "稳准" },
+    { icon: "🃏", label: "王牌" },
+    { icon: "♠️", label: "黑桃" },
+    { icon: "♥️", label: "红桃" },
+    { icon: "♦️", label: "方块" }
+];
+const CHAT_MESSAGE_PREFIX = "__CARD_CHAT__";
+const MAX_CHAT_ITEMS = 8;
+const MAX_VOICE_SECONDS = 15;
+const MAX_VOICE_BYTES = 180000;
 
 let ws = null;
 let currentRoomId = "";
@@ -42,10 +60,17 @@ let handResizeObserver = null;
 let landscapeRequested = false;
 let autoStartAfterJoin = false;
 let clientId = "";
+let mediaRecorder = null;
+let voiceChunks = [];
+let voiceStartedAt = 0;
+let voiceTimer = null;
+let voiceAutoStopTimer = null;
+let isRecordingVoice = false;
 
 document.addEventListener("DOMContentLoaded", () => {
     clientId = getClientId();
     loadRooms();
+    initSocialControls();
     setActionVisibility({});
     window.addEventListener("resize", scheduleHandLayout);
     window.addEventListener("orientationchange", () => {
@@ -312,8 +337,291 @@ function handleMessage(message) {
     }
 
     if (message.action === "chat") {
+        handleChatMessage(message);
+    }
+}
+
+function initSocialControls() {
+    renderEmojiPanel();
+    bindVoiceRecordButton();
+    document.addEventListener("click", (event) => {
+        const panel = $("emojiPanel");
+        const toggle = $("emojiToggleBtn");
+        if (!panel || panel.hidden || !toggle) {
+            return;
+        }
+        if (!panel.contains(event.target) && !toggle.contains(event.target)) {
+            panel.hidden = true;
+        }
+    });
+}
+
+function renderEmojiPanel() {
+    const panel = $("emojiPanel");
+    if (!panel) {
+        return;
+    }
+    panel.innerHTML = "";
+    CHAT_EMOJIS.forEach((item) => {
+        const button = document.createElement("button");
+        button.className = "emoji-choice";
+        button.type = "button";
+        button.setAttribute("aria-label", item.label);
+        button.innerHTML = `<span>${item.icon}</span><small>${escapeHtml(item.label)}</small>`;
+        button.addEventListener("click", () => sendEmoji(item));
+        panel.appendChild(button);
+    });
+}
+
+function toggleEmojiPanel() {
+    const panel = $("emojiPanel");
+    if (!panel) {
+        return;
+    }
+    panel.hidden = !panel.hidden;
+}
+
+function sendEmoji(item) {
+    sendChatPayload({ type: "emoji", icon: item.icon, label: item.label });
+    const panel = $("emojiPanel");
+    if (panel) {
+        panel.hidden = true;
+    }
+}
+
+function bindVoiceRecordButton() {
+    const button = $("voiceRecordBtn");
+    if (!button) {
+        return;
+    }
+    button.addEventListener("pointerdown", startVoiceRecording);
+    button.addEventListener("pointerup", stopVoiceRecording);
+    button.addEventListener("pointerleave", cancelVoiceRecording);
+    button.addEventListener("pointercancel", cancelVoiceRecording);
+    button.addEventListener("contextmenu", (event) => event.preventDefault());
+}
+
+async function startVoiceRecording(event) {
+    event.preventDefault();
+    if (!ws || ws.readyState !== WebSocket.OPEN) {
+        showToast("尚未连接房间");
+        return;
+    }
+    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
+        showToast("当前浏览器不支持语音录制");
+        return;
+    }
+    if (isRecordingVoice) {
+        return;
+    }
+
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const mimeType = getVoiceMimeType();
+        mediaRecorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+        voiceChunks = [];
+        voiceStartedAt = Date.now();
+        isRecordingVoice = true;
+        updateVoiceRecordingUi(true);
+
+        mediaRecorder.addEventListener("dataavailable", (recordEvent) => {
+            if (recordEvent.data?.size) {
+                voiceChunks.push(recordEvent.data);
+            }
+        });
+        mediaRecorder.addEventListener("stop", () => {
+            stream.getTracks().forEach((track) => track.stop());
+        });
+        mediaRecorder.start();
+
+        voiceTimer = setInterval(updateVoiceTimer, 250);
+        voiceAutoStopTimer = setTimeout(() => stopVoiceRecording(), MAX_VOICE_SECONDS * 1000);
+    } catch (error) {
+        isRecordingVoice = false;
+        updateVoiceRecordingUi(false);
+        showToast("需要麦克风权限才能发送语音");
+    }
+}
+
+async function stopVoiceRecording() {
+    if (!isRecordingVoice || !mediaRecorder) {
+        return;
+    }
+    const recorder = mediaRecorder;
+    cleanupVoiceTimers();
+    isRecordingVoice = false;
+    updateVoiceRecordingUi(false);
+
+    await new Promise((resolve) => {
+        recorder.addEventListener("stop", resolve, { once: true });
+        if (recorder.state !== "inactive") {
+            recorder.stop();
+        } else {
+            resolve();
+        }
+    });
+
+    const duration = Math.max(1, Math.round((Date.now() - voiceStartedAt) / 1000));
+    if (duration < 1 || !voiceChunks.length) {
+        showToast("录音时间太短");
+        return;
+    }
+
+    const blob = new Blob(voiceChunks, { type: recorder.mimeType || "audio/webm" });
+    if (blob.size > MAX_VOICE_BYTES) {
+        showToast("语音太长，请控制在15秒内");
+        return;
+    }
+
+    const dataUrl = await blobToDataUrl(blob);
+    sendChatPayload({
+        type: "voice",
+        audio: dataUrl,
+        duration,
+        mime: blob.type || "audio/webm"
+    });
+}
+
+function cancelVoiceRecording() {
+    if (!isRecordingVoice || !mediaRecorder) {
+        return;
+    }
+    cleanupVoiceTimers();
+    isRecordingVoice = false;
+    voiceChunks = [];
+    updateVoiceRecordingUi(false);
+    if (mediaRecorder.state !== "inactive") {
+        mediaRecorder.stop();
+    }
+}
+
+function getVoiceMimeType() {
+    const types = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4"];
+    return types.find((type) => MediaRecorder.isTypeSupported?.(type)) || "";
+}
+
+function updateVoiceRecordingUi(active) {
+    const button = $("voiceRecordBtn");
+    const hint = $("voiceRecordingHint");
+    if (button) {
+        button.classList.toggle("recording", active);
+        $("voiceRecordText").textContent = active ? "松开发送" : "按住说话";
+    }
+    if (hint) {
+        hint.hidden = !active;
+    }
+    updateVoiceTimer();
+}
+
+function updateVoiceTimer() {
+    const time = $("voiceRecordingTime");
+    if (!time) {
+        return;
+    }
+    const seconds = isRecordingVoice ? Math.min(MAX_VOICE_SECONDS, Math.round((Date.now() - voiceStartedAt) / 1000)) : 0;
+    time.textContent = `${seconds}"`;
+}
+
+function cleanupVoiceTimers() {
+    clearInterval(voiceTimer);
+    clearTimeout(voiceAutoStopTimer);
+    voiceTimer = null;
+    voiceAutoStopTimer = null;
+}
+
+function blobToDataUrl(blob) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+    });
+}
+
+function sendChatPayload(payload) {
+    send({ action: "chat", msg: `${CHAT_MESSAGE_PREFIX}${JSON.stringify(payload)}` });
+}
+
+function handleChatMessage(message) {
+    const payload = parseChatPayload(message.msg);
+    addChatBubble(message.name || "玩家", payload, message.seat);
+    if (payload.type === "emoji") {
+        showToast(`${message.name}: ${payload.icon} ${payload.label || ""}`.trim());
+    } else if (payload.type === "voice") {
+        showToast(`${message.name}: 语音 ${payload.duration || 1}"`);
+    } else {
         showToast(`${message.name}: ${message.msg}`);
     }
+}
+
+function parseChatPayload(raw) {
+    if (typeof raw !== "string" || !raw.startsWith(CHAT_MESSAGE_PREFIX)) {
+        return { type: "text", text: raw || "" };
+    }
+    try {
+        const payload = JSON.parse(raw.slice(CHAT_MESSAGE_PREFIX.length));
+        return payload && typeof payload === "object" ? payload : { type: "text", text: raw };
+    } catch (error) {
+        return { type: "text", text: raw };
+    }
+}
+
+function addChatBubble(name, payload, seat) {
+    const feed = $("chatFeed");
+    if (!feed) {
+        return;
+    }
+    const item = document.createElement("div");
+    item.className = `chat-bubble ${seat === mySeat ? "mine" : ""}`;
+    item.innerHTML = renderChatBubbleHtml(name, payload);
+    feed.appendChild(item);
+    while (feed.children.length > MAX_CHAT_ITEMS) {
+        feed.removeChild(feed.firstElementChild);
+    }
+    feed.scrollTop = feed.scrollHeight;
+}
+
+function renderChatBubbleHtml(name, payload) {
+    const safeName = escapeHtml(name);
+    if (payload.type === "emoji") {
+        return `
+            <span class="chat-name">${safeName}</span>
+            <span class="emoji-message" title="${escapeHtml(payload.label || "表情")}">${escapeHtml(payload.icon || "🙂")}</span>
+            <span class="chat-label">${escapeHtml(payload.label || "")}</span>
+        `;
+    }
+    if (payload.type === "voice" && payload.audio) {
+        const duration = Math.max(1, Math.min(MAX_VOICE_SECONDS, Number(payload.duration) || 1));
+        return `
+            <span class="chat-name">${safeName}</span>
+            <button class="voice-message" type="button" onclick="playVoiceMessage(this)" data-audio="${escapeHtml(payload.audio)}">
+                <span class="voice-wave">)))</span>
+                <strong>${duration}"</strong>
+            </button>
+        `;
+    }
+    return `
+        <span class="chat-name">${safeName}</span>
+        <span class="text-message">${escapeHtml(payload.text || "")}</span>
+    `;
+}
+
+function playVoiceMessage(button) {
+    const audioUrl = button?.dataset?.audio;
+    if (!audioUrl) {
+        return;
+    }
+    const audio = new Audio(audioUrl);
+    button.classList.add("playing");
+    audio.addEventListener("ended", () => button.classList.remove("playing"));
+    audio.addEventListener("error", () => {
+        button.classList.remove("playing");
+        showToast("语音播放失败");
+    });
+    audio.play().catch(() => {
+        button.classList.remove("playing");
+        showToast("点击后再播放语音");
+    });
 }
 
 function updateState(state) {
