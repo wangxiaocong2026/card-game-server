@@ -46,6 +46,7 @@ const CHAT_MESSAGE_PREFIX = "__CARD_CHAT__";
 const MAX_CHAT_ITEMS = 8;
 const MAX_VOICE_SECONDS = 15;
 const MAX_VOICE_BYTES = 180000;
+const SOCIAL_POSITION_KEY = "chaoyang_social_position";
 
 let ws = null;
 let currentRoomId = "";
@@ -66,6 +67,8 @@ let voiceStartedAt = 0;
 let voiceTimer = null;
 let voiceAutoStopTimer = null;
 let isRecordingVoice = false;
+let socialDragState = null;
+let socialPosition = null;
 
 document.addEventListener("DOMContentLoaded", () => {
     clientId = getClientId();
@@ -73,10 +76,12 @@ document.addEventListener("DOMContentLoaded", () => {
     initSocialControls();
     setActionVisibility({});
     window.addEventListener("resize", scheduleHandLayout);
+    window.addEventListener("resize", positionSocialDock);
     window.addEventListener("orientationchange", () => {
         setTimeout(() => {
             updateLandscapeButton();
             scheduleHandLayout();
+            positionSocialDock();
         }, 240);
     });
     document.addEventListener("fullscreenchange", () => {
@@ -89,6 +94,10 @@ document.addEventListener("DOMContentLoaded", () => {
     if ("ResizeObserver" in window) {
         handResizeObserver = new ResizeObserver(scheduleHandLayout);
         handResizeObserver.observe($("myHand"));
+        const handArea = document.querySelector(".my-hand-area");
+        if (handArea) {
+            handResizeObserver.observe(handArea);
+        }
     }
     updateLandscapeButton();
 });
@@ -102,6 +111,8 @@ function showScreen(id) {
     $(id).classList.add("active");
     if (id === "game") {
         scheduleHandLayout();
+        positionSocialDock();
+        settleSocialDockPosition();
     }
 }
 
@@ -344,6 +355,9 @@ function handleMessage(message) {
 function initSocialControls() {
     renderEmojiPanel();
     bindVoiceRecordButton();
+    bindSocialDrag();
+    restoreSocialPosition();
+    requestAnimationFrame(positionSocialDock);
     document.addEventListener("click", (event) => {
         const panel = $("emojiPanel");
         const toggle = $("emojiToggleBtn");
@@ -352,8 +366,239 @@ function initSocialControls() {
         }
         if (!panel.contains(event.target) && !toggle.contains(event.target)) {
             panel.hidden = true;
+            positionSocialDock();
         }
     });
+}
+
+function bindSocialDrag() {
+    const handle = $("socialDragHandle");
+    const dock = document.querySelector(".table-social");
+    if (!handle || !dock) {
+        return;
+    }
+    handle.addEventListener("pointerdown", (event) => {
+        event.preventDefault();
+        const rect = dock.getBoundingClientRect();
+        socialDragState = {
+            pointerId: event.pointerId,
+            offsetX: event.clientX - rect.left,
+            offsetY: event.clientY - rect.top
+        };
+        dock.classList.add("dragging");
+        handle.setPointerCapture?.(event.pointerId);
+    });
+    handle.addEventListener("pointermove", (event) => {
+        if (!socialDragState || socialDragState.pointerId !== event.pointerId) {
+            return;
+        }
+        event.preventDefault();
+        setSocialPosition(event.clientX - socialDragState.offsetX, event.clientY - socialDragState.offsetY, true);
+    });
+    const endDrag = (event) => {
+        if (!socialDragState || socialDragState.pointerId !== event.pointerId) {
+            return;
+        }
+        socialDragState = null;
+        dock.classList.remove("dragging");
+        saveSocialPosition();
+    };
+    handle.addEventListener("pointerup", endDrag);
+    handle.addEventListener("pointercancel", endDrag);
+}
+
+function restoreSocialPosition() {
+    try {
+        const saved = JSON.parse(localStorage.getItem(SOCIAL_POSITION_KEY) || "null");
+        if (saved && Number.isFinite(saved.x) && Number.isFinite(saved.y)) {
+            socialPosition = saved;
+        }
+    } catch (error) {
+        socialPosition = null;
+    }
+}
+
+function saveSocialPosition() {
+    if (!socialPosition) {
+        return;
+    }
+    localStorage.setItem(SOCIAL_POSITION_KEY, JSON.stringify(socialPosition));
+}
+
+function toggleEmojiPanel() {
+    const panel = $("emojiPanel");
+    if (!panel) {
+        return;
+    }
+    panel.hidden = !panel.hidden;
+    if (!panel.hidden) {
+        socialPosition = null;
+        localStorage.removeItem(SOCIAL_POSITION_KEY);
+    }
+    positionSocialDock();
+    requestAnimationFrame(positionSocialDock);
+    setTimeout(positionSocialDock, 80);
+    settleSocialDockPosition();
+}
+
+function settleSocialDockPosition() {
+    [80, 180, 360, 720].forEach((delay) => {
+        setTimeout(positionSocialDock, delay);
+    });
+}
+
+function positionSocialDock() {
+    const dock = document.querySelector(".table-social");
+    if (!dock || !$("game")?.classList.contains("active")) {
+        return;
+    }
+    requestAnimationFrame(() => {
+        dock.classList.toggle("social-tight", shouldUseTightSocialDock(dock));
+        if (socialPosition && isSocialPositionSafe(socialPosition)) {
+            setSocialPosition(socialPosition.x, socialPosition.y, true);
+            avoidSocialOverlaps();
+            return;
+        }
+        if (socialPosition && !isSocialPositionSafe(socialPosition)) {
+            socialPosition = null;
+            localStorage.removeItem(SOCIAL_POSITION_KEY);
+        }
+        const safe = getSocialSafeArea();
+        const rect = dock.getBoundingClientRect();
+        const x = Math.max(safe.left, safe.right - rect.width);
+        const y = Math.max(safe.top, safe.bottom - rect.height);
+        setSocialPosition(x, y, false);
+        avoidSocialOverlaps();
+    });
+}
+
+function shouldUseTightSocialDock(dock) {
+    const hand = document.querySelector(".my-hand-area")?.getBoundingClientRect();
+    const hud = document.querySelector(".game-hud")?.getBoundingClientRect();
+    const available = hand ? hand.top - ((hud?.bottom || 0) + 10) : window.innerHeight;
+    return window.innerHeight <= 430 && available < dock.getBoundingClientRect().height + 18;
+}
+
+function setSocialPosition(x, y, persist) {
+    const dock = document.querySelector(".table-social");
+    if (!dock) {
+        return;
+    }
+    const safe = getSocialSafeArea();
+    const rect = dock.getBoundingClientRect();
+    const maxX = Math.max(safe.left, safe.right - rect.width);
+    const maxY = Math.max(safe.top, safe.bottom - rect.height);
+    const next = {
+        x: Math.round(clamp(x, safe.left, maxX)),
+        y: Math.round(clamp(y, safe.top, maxY))
+    };
+    dock.style.left = `${next.x}px`;
+    dock.style.top = `${next.y}px`;
+    dock.style.right = "auto";
+    dock.style.bottom = "auto";
+    if (persist) {
+        socialPosition = next;
+    }
+}
+
+function avoidSocialOverlaps() {
+    const dock = document.querySelector(".table-social");
+    if (!dock) {
+        return;
+    }
+    const rect = dock.getBoundingClientRect();
+    const blockers = [
+        document.querySelector(".my-hand-area")?.getBoundingClientRect(),
+        $("actionBar")?.getBoundingClientRect(),
+        document.querySelector(".game-hud")?.getBoundingClientRect()
+    ].filter(Boolean);
+    if (!blockers.some((blocker) => doesRectOverlap(rect, blocker))) {
+        return;
+    }
+
+    const margin = 8;
+    const viewportWidth = window.visualViewport?.width || window.innerWidth;
+    const hud = document.querySelector(".game-hud")?.getBoundingClientRect();
+    const hand = document.querySelector(".my-hand-area")?.getBoundingClientRect();
+    const y = Math.max(margin, (hud?.bottom || 0) + margin);
+    if (hand && doesRectOverlap(rect, hand)) {
+        const liftedY = Math.max(y, hand.top - rect.height - margin);
+        dock.style.left = `${Math.round(Math.min(rect.left, viewportWidth - rect.width - margin))}px`;
+        dock.style.top = `${Math.round(liftedY)}px`;
+        dock.style.right = "auto";
+        dock.style.bottom = "auto";
+        return;
+    }
+    const candidates = [
+        hand ? { x: margin, y: Math.max(y, hand.top + 2) } : null,
+        hand ? { x: viewportWidth - rect.width - margin, y: Math.max(y, hand.top + 2) } : null,
+        { x: viewportWidth - rect.width - margin, y },
+        { x: margin, y },
+        { x: Math.max(margin, (viewportWidth - rect.width) / 2), y }
+    ].filter(Boolean);
+    const safeCandidate = candidates.find((candidate) => {
+        const testRect = {
+            left: candidate.x,
+            top: candidate.y,
+            right: candidate.x + rect.width,
+            bottom: candidate.y + rect.height
+        };
+        return !blockers.some((blocker) => doesRectOverlap(testRect, blocker));
+    }) || candidates[0];
+
+    dock.style.left = `${Math.round(safeCandidate.x)}px`;
+    dock.style.top = `${Math.round(safeCandidate.y)}px`;
+    dock.style.right = "auto";
+    dock.style.bottom = "auto";
+}
+
+function isSocialPositionSafe(position) {
+    const dock = document.querySelector(".table-social");
+    if (!dock) {
+        return false;
+    }
+    const rect = dock.getBoundingClientRect();
+    const testRect = {
+        left: position.x,
+        top: position.y,
+        right: position.x + rect.width,
+        bottom: position.y + rect.height
+    };
+    return !doesRectOverlap(testRect, document.querySelector(".my-hand-area")?.getBoundingClientRect())
+        && !doesRectOverlap(testRect, $("actionBar")?.getBoundingClientRect())
+        && !doesRectOverlap(testRect, document.querySelector(".game-hud")?.getBoundingClientRect());
+}
+
+function doesRectOverlap(a, b) {
+    if (!a || !b) {
+        return false;
+    }
+    return !(a.right <= b.left || a.left >= b.right || a.bottom <= b.top || a.top >= b.bottom);
+}
+
+function getSocialSafeArea() {
+    const margin = 8;
+    const viewportWidth = window.visualViewport?.width || window.innerWidth;
+    const viewportHeight = window.visualViewport?.height || window.innerHeight;
+    const hand = document.querySelector(".my-hand-area")?.getBoundingClientRect();
+    const actions = $("actionBar")?.getBoundingClientRect();
+    let bottom = viewportHeight - margin;
+    if (hand && hand.top > 0) {
+        bottom = Math.min(bottom, hand.top - margin);
+    }
+    if (actions && actions.top > 0) {
+        bottom = Math.min(bottom, actions.top - margin);
+    }
+    return {
+        left: margin,
+        top: margin,
+        right: viewportWidth - margin,
+        bottom: Math.max(160, bottom)
+    };
+}
+
+function clamp(value, min, max) {
+    return Math.min(Math.max(value, min), max);
 }
 
 function renderEmojiPanel() {
@@ -371,14 +616,6 @@ function renderEmojiPanel() {
         button.addEventListener("click", () => sendEmoji(item));
         panel.appendChild(button);
     });
-}
-
-function toggleEmojiPanel() {
-    const panel = $("emojiPanel");
-    if (!panel) {
-        return;
-    }
-    panel.hidden = !panel.hidden;
 }
 
 function sendEmoji(item) {
@@ -579,6 +816,9 @@ function addChatBubble(name, payload, seat) {
         feed.removeChild(feed.firstElementChild);
     }
     feed.scrollTop = feed.scrollHeight;
+    if (!socialPosition) {
+        positionSocialDock();
+    }
 }
 
 function renderChatBubbleHtml(name, payload) {
@@ -661,6 +901,7 @@ function updateState(state) {
     renderHand(state);
     renderCenterMessage(state);
     setActionVisibility(state);
+    settleSocialDockPosition();
 
     if (state.phase === "game_over" && state.game_result) {
         showResult(state.game_result);
@@ -1005,6 +1246,7 @@ function updateHandLayout() {
     }
     if (!count) {
         hand.style.removeProperty("--hand-height");
+        positionSocialDock();
         return;
     }
 
@@ -1051,6 +1293,7 @@ function updateHandLayout() {
             cardIndex += 1;
         }
     }
+    positionSocialDock();
 }
 
 function chooseHandRows(count, available, cardWidth, minStep, maxRows) {
