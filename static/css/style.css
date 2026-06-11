@@ -2993,3 +2993,831 @@ body.landscape-mode .toast {
         font-size: 0.84rem;
     }
 }
+
+/* UI 2.0 - 横屏牌桌界面 */
+#game .table-shell {
+    position: relative;
+    height: 100vh;
+    height: 100dvh;
+    min-height: 560px;
+    display: block;
+    padding: 0;
+    overflow: hidden;
+    background:
+        radial-gradient(circle at 3% 18%, rgba(245, 225, 176, 0.35), transparent 12%),
+        radial-gradient(circle at 96% 10%, rgba(72, 112, 70, 0.34), transparent 13%),
+        linear-gradient(90deg, #7a5133 0%, #b07a4d 12%, #8c5c37 18%, #7d5739 82%, #b77e4c 91%, #6b452f 100%);
+}
+
+#game .table-shell::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background:
+        linear-gradient(90deg, rgba(255,255,255,0.12), transparent 18%, transparent 82%, rgba(255,255,255,0.1)),
+        repeating-linear-gradient(90deg, rgba(255,255,255,0.045) 0 1px, transparent 1px 86px);
+    pointer-events: none;
+}
+
+#game .game-hud {
+    position: absolute;
+    z-index: 22;
+    left: clamp(76px, 7.5vw, 120px);
+    top: clamp(8px, 1.5vh, 18px);
+    width: min(560px, 48vw);
+    height: 56px;
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr)) 58px;
+    gap: 0;
+    align-items: stretch;
+    overflow: visible;
+    border-radius: 7px;
+    filter: drop-shadow(0 8px 18px rgba(0,0,0,0.32));
+}
+
+#game .hud-item {
+    min-height: 0;
+    padding: 5px 8px;
+    border: 0;
+    border-left: 1px solid rgba(255,255,255,0.18);
+    border-radius: 0;
+    background: linear-gradient(180deg, rgba(57,70,80,0.94), rgba(25,42,48,0.94));
+    text-align: center;
+}
+
+#game .hud-item:first-child {
+    border-left: 0;
+    border-radius: 7px 0 0 7px;
+}
+
+#game .hud-item span {
+    margin: 0 0 2px;
+    color: #f7e8a7;
+    font-size: clamp(0.62rem, 1.3vw, 0.82rem);
+    font-weight: 900;
+    line-height: 1.05;
+}
+
+#game .hud-item strong {
+    display: block;
+    overflow: hidden;
+    color: #fff;
+    font-size: clamp(0.82rem, 1.9vw, 1.28rem);
+    line-height: 1.1;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#game .trump-hud strong,
+#game #infoScore {
+    color: #ffd94f;
+}
+
+#game .game-hud > .btn {
+    min-width: 0;
+    min-height: 0;
+    height: 56px;
+    padding: 0 8px;
+    border-radius: 0 7px 7px 0;
+    color: #f2f7f6;
+    background: linear-gradient(180deg, rgba(33,57,63,0.96), rgba(20,34,38,0.96));
+    font-size: 0.78rem;
+}
+
+#game .table-felt {
+    position: absolute;
+    z-index: 1;
+    left: clamp(76px, 7vw, 128px);
+    right: clamp(76px, 7vw, 128px);
+    top: clamp(34px, 6vh, 70px);
+    bottom: clamp(96px, 20vh, 178px);
+    min-height: 0;
+    overflow: visible;
+    border: 12px solid rgba(61, 54, 49, 0.82);
+    border-radius: 28px;
+    background:
+        radial-gradient(ellipse at 50% 40%, rgba(56, 190, 157, 0.45), transparent 46%),
+        linear-gradient(135deg, #188874 0%, #12806f 43%, #0f6d63 100%);
+    box-shadow:
+        inset 0 0 0 2px rgba(255,255,255,0.1),
+        inset 0 16px 55px rgba(255,255,255,0.08),
+        inset 0 -20px 70px rgba(0,0,0,0.16),
+        0 22px 45px rgba(0,0,0,0.34);
+}
+
+#game .table-felt::before {
+    inset: -28px;
+    z-index: -1;
+    border: 0;
+    border-radius: 36px;
+    background: linear-gradient(135deg, rgba(52,43,38,0.86), rgba(24,27,27,0.86));
+    box-shadow: inset 0 0 0 2px rgba(255,255,255,0.08);
+}
+
+#game .table-felt::after {
+    content: "微乐 升级";
+    left: 8%;
+    right: auto;
+    top: auto;
+    bottom: 17%;
+    width: 190px;
+    height: auto;
+    border: 0;
+    border-radius: 0;
+    color: rgba(0, 61, 60, 0.22);
+    font-size: clamp(1.1rem, 2.2vw, 1.8rem);
+    font-weight: 900;
+    letter-spacing: 0;
+}
+
+#game .landscape-btn {
+    display: grid;
+    top: 12px;
+    right: 12px;
+    min-width: 44px;
+    min-height: 44px;
+    border-radius: 9px;
+    background: rgba(35,45,53,0.86);
+}
+
+#game .landscape-btn::before {
+    content: "☰";
+    font-size: 1.35rem;
+    line-height: 1;
+}
+
+#game #landscapeBtnText {
+    display: none;
+}
+
+#game .player-panel {
+    z-index: 12;
+    min-width: 76px;
+    max-width: 92px;
+    min-height: 116px;
+    display: grid;
+    grid-template-columns: 1fr;
+    justify-items: center;
+    gap: 3px;
+    padding: 5px 5px 7px;
+    border: 2px solid rgba(255, 142, 64, 0.85);
+    border-radius: 6px;
+    background: linear-gradient(180deg, rgba(33,44,49,0.9), rgba(38,25,22,0.86));
+    box-shadow: 0 9px 22px rgba(0,0,0,0.28);
+}
+
+#game .player-panel.banker::before {
+    content: "庄";
+    position: absolute;
+    left: -6px;
+    top: -8px;
+    z-index: 3;
+    display: grid;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    background: #e8523d;
+    color: #fffbd9;
+    font-weight: 900;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.26);
+}
+
+#game .opponent-top {
+    top: -18px;
+    left: 63%;
+    transform: translateX(-50%);
+}
+
+#game .opponent-left {
+    left: -56px;
+    top: 34%;
+    transform: translateY(-50%);
+}
+
+#game .opponent-right {
+    right: -56px;
+    top: 34%;
+    transform: translateY(-50%);
+}
+
+#game .avatar {
+    width: 54px;
+    height: 54px;
+    flex-basis: auto;
+    border: 3px solid rgba(255,255,255,0.78);
+    border-radius: 5px;
+    background: linear-gradient(135deg, #d6e1ef, #7da6c9);
+    color: #153146;
+    font-size: 1.28rem;
+}
+
+#game .player-panel > div:last-child {
+    display: grid;
+    justify-items: center;
+    gap: 1px;
+}
+
+#game .player-panel strong,
+#game .player-panel span {
+    max-width: 76px;
+    color: #fff;
+    text-align: center;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.42);
+}
+
+#game .player-panel strong {
+    font-size: 0.82rem;
+    color: #ffe58e;
+}
+
+#game .player-panel span {
+    font-size: 0.78rem;
+}
+
+#game .player-panel .team-role {
+    position: absolute;
+    right: -7px;
+    top: -10px;
+    margin: 0;
+    border: 0;
+    border-radius: 4px;
+    background: #ec7440;
+    color: #fff7ce !important;
+    font-size: 0.72rem !important;
+}
+
+#game .player-panel.active-turn {
+    box-shadow: 0 0 0 4px rgba(255,220,92,0.32), 0 10px 26px rgba(0,0,0,0.32);
+}
+
+#game .kitty-cards {
+    top: 10%;
+    left: 16%;
+    gap: 4px;
+    transform: none;
+}
+
+#game .kitty-label,
+#game .koupai-label {
+    color: #fff4be;
+    text-shadow: 0 2px 5px rgba(0,0,0,0.4);
+}
+
+#game .card-back {
+    width: clamp(28px, 3.3vw, 44px);
+    height: clamp(40px, 4.6vw, 62px);
+    border-radius: 5px;
+}
+
+#game .center-play-area {
+    inset: 16% 16% 20%;
+    z-index: 4;
+}
+
+#game .center-message {
+    top: 34%;
+    min-width: min(420px, 52vw);
+    padding: 0;
+    border-radius: 0;
+    background: transparent;
+    color: rgba(255,255,255,0.94);
+    font-size: clamp(1.7rem, 4.2vw, 3rem);
+    font-weight: 900;
+    text-shadow: 0 3px 8px rgba(0,0,0,0.42);
+}
+
+#game .trump-hint {
+    top: calc(34% + 62px);
+    border: 0;
+    background: rgba(0, 42, 46, 0.28);
+    font-size: 0.82rem;
+}
+
+#game .liangzhu-display {
+    bottom: 4%;
+    left: 50%;
+    width: min(520px, 56vw);
+    transform: translateX(-50%);
+}
+
+#game .played-grid {
+    top: 22%;
+    width: min(560px, 52vw);
+    height: min(170px, 24vh);
+}
+
+#game .played-slot {
+    min-width: 82px;
+    min-height: 50px;
+}
+
+#game .played-slot .card {
+    width: clamp(32px, 4vw, 48px);
+    height: clamp(46px, 5.6vw, 66px);
+    flex-basis: clamp(32px, 4vw, 48px);
+    padding: 5px;
+}
+
+#game .my-hand-area {
+    z-index: 18;
+    left: clamp(48px, 4.8vw, 92px);
+    right: clamp(48px, 4.8vw, 92px);
+    bottom: clamp(18px, 3vh, 34px);
+    min-height: 0;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    gap: 4px;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
+#game .my-info {
+    min-height: 38px;
+    justify-content: flex-start;
+    gap: 12px;
+    padding-left: clamp(76px, 9vw, 132px);
+}
+
+#game .my-info > div:first-child {
+    min-height: 38px;
+    padding: 4px 14px;
+    border-radius: 4px;
+    background: rgba(9, 46, 58, 0.78);
+    box-shadow: 0 5px 14px rgba(0,0,0,0.2);
+}
+
+#game #myName {
+    max-width: 170px;
+    color: #fff;
+    font-size: clamp(1rem, 2vw, 1.36rem);
+}
+
+#game #myCount,
+#game #myRole {
+    color: rgba(255,255,255,0.76);
+    font-size: 0.82rem;
+}
+
+#game .hand-prompt.visible {
+    max-width: min(520px, 42vw);
+    border: 0;
+    background: rgba(7, 40, 48, 0.74);
+    color: #dbeef0 !important;
+}
+
+#game .my-hand {
+    --hand-card-w: 74px;
+    --hand-card-h: 114px;
+    --hand-card-pad: 7px;
+    --hand-card-rank: 1.92rem;
+    --hand-card-suit: 2rem;
+    --selected-lift: 22px;
+    min-height: var(--hand-height, 128px);
+    overflow: visible;
+}
+
+#game .my-hand .card {
+    border-color: rgba(30, 30, 30, 0.22);
+    border-radius: 7px;
+    background: linear-gradient(180deg, #fbfbfa 0%, #e9e8e4 100%);
+    box-shadow: 0 5px 9px rgba(0,0,0,0.28);
+}
+
+#game .my-hand .card .rank {
+    font-family: Georgia, "Times New Roman", serif;
+    font-weight: 900;
+}
+
+#game .my-hand .card .suit {
+    justify-self: center;
+    font-size: var(--hand-card-suit);
+}
+
+#game .action-dock {
+    position: absolute;
+    z-index: 24;
+    right: clamp(70px, 6vw, 110px);
+    bottom: clamp(14px, 2.5vh, 26px);
+    min-height: 44px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 0;
+}
+
+#game .action-dock .btn {
+    min-width: 76px;
+    min-height: 38px;
+    padding: 0 11px;
+    border-radius: 6px;
+    font-size: 0.86rem;
+    box-shadow: 0 7px 18px rgba(0,0,0,0.28);
+}
+
+#game .table-social {
+    top: auto;
+    left: auto;
+    right: clamp(12px, 2.2vw, 28px);
+    bottom: clamp(116px, 22vh, 190px);
+    width: 174px;
+    grid-template-columns: 1fr;
+}
+
+#game .social-drag-handle {
+    display: none;
+}
+
+#game .chat-feed {
+    grid-column: 1;
+    max-height: 72px;
+}
+
+#game .social-controls {
+    grid-column: 1;
+    justify-self: end;
+    gap: 6px;
+}
+
+#game .social-icon-btn,
+#game .voice-record-btn {
+    min-height: 34px;
+    border-radius: 999px;
+    background: rgba(37, 45, 57, 0.78);
+}
+
+#game .social-icon-btn {
+    width: 38px;
+}
+
+#game .voice-record-btn {
+    min-width: 92px;
+    padding: 0 10px;
+    font-size: 0.78rem;
+}
+
+#game .emoji-panel {
+    width: 190px;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 4px;
+    padding: 6px;
+}
+
+#game .emoji-choice {
+    min-height: 30px;
+    padding: 2px;
+}
+
+#game .emoji-choice span {
+    font-size: 1rem;
+}
+
+#game .emoji-choice small {
+    display: none;
+}
+
+@media (orientation: landscape) and (max-height: 620px) {
+    #game .table-shell {
+        min-height: 100vh;
+    }
+
+    #game .game-hud {
+        left: 74px;
+        top: 7px;
+        width: min(470px, 52vw);
+        height: 46px;
+    }
+
+    #game .hud-item {
+        padding: 4px 5px;
+    }
+
+    #game .hud-item span {
+        font-size: 0.58rem;
+    }
+
+    #game .hud-item strong {
+        font-size: 0.82rem;
+    }
+
+    #game .game-hud > .btn {
+        height: 46px;
+        font-size: 0.68rem;
+    }
+
+    #game .table-felt {
+        left: 74px;
+        right: 54px;
+        top: 34px;
+        bottom: 92px;
+        border-width: 9px;
+        border-radius: 22px;
+    }
+
+    #game .opponent-top {
+        top: -16px;
+        left: 63%;
+    }
+
+    #game .opponent-left {
+        left: -48px;
+        top: 38%;
+    }
+
+    #game .opponent-right {
+        right: -48px;
+        top: 38%;
+    }
+
+    #game .player-panel {
+        min-width: 66px;
+        max-width: 72px;
+        min-height: 94px;
+        padding: 4px;
+    }
+
+    #game .avatar {
+        width: 44px;
+        height: 44px;
+        font-size: 1rem;
+    }
+
+    #game .player-panel strong,
+    #game .player-panel span {
+        max-width: 62px;
+        font-size: 0.68rem;
+    }
+
+    #game .player-panel .team-role {
+        font-size: 0.62rem !important;
+    }
+
+    #game .kitty-cards {
+        top: 13%;
+        left: 15%;
+    }
+
+    #game .center-play-area {
+        inset: 17% 13% 25%;
+    }
+
+    #game .center-message {
+        top: 32%;
+        font-size: clamp(1.45rem, 4.2vw, 2.2rem);
+    }
+
+    #game .trump-hint {
+        top: calc(32% + 48px);
+        padding: 4px 8px;
+        font-size: 0.68rem;
+    }
+
+    #game .played-grid {
+        top: 22%;
+        height: 96px;
+    }
+
+    #game .my-hand-area {
+        left: 66px;
+        right: 66px;
+        bottom: 11px;
+    }
+
+    #game .my-info {
+        min-height: 28px;
+        padding-left: 72px;
+    }
+
+    #game .my-info > div:first-child {
+        min-height: 28px;
+        padding: 2px 10px;
+    }
+
+    #game #myName {
+        font-size: 0.95rem;
+    }
+
+    #game #myCount,
+    #game #myRole {
+        font-size: 0.7rem;
+    }
+
+    #game .my-hand {
+        --hand-card-w: 50px;
+        --hand-card-h: 78px;
+        --hand-card-pad: 5px;
+        --hand-card-rank: 1.32rem;
+        --hand-card-suit: 1.4rem;
+        --selected-lift: 12px;
+    }
+
+    #game .action-dock {
+        right: 62px;
+        bottom: 7px;
+        gap: 5px;
+    }
+
+    #game .action-dock .btn {
+        min-width: 58px;
+        min-height: 29px;
+        padding: 0 7px;
+        font-size: 0.68rem;
+    }
+
+    #game .table-social {
+        right: 10px;
+        bottom: 88px;
+        width: 132px;
+    }
+
+    #game .chat-feed {
+        max-height: 42px;
+    }
+
+    #game .voice-record-btn {
+        min-width: 78px;
+        min-height: 30px;
+        font-size: 0.68rem;
+    }
+
+    #game .social-icon-btn {
+        width: 32px;
+        min-height: 30px;
+    }
+
+    #game .emoji-panel {
+        width: 164px;
+    }
+}
+
+@media (max-width: 920px) and (orientation: portrait) {
+    #game .screen.active,
+    #game.screen.active {
+        min-height: 100vh;
+    }
+
+    #game .table-shell {
+        min-width: 760px;
+        transform-origin: top left;
+    }
+}
+
+/* UI 2.0 overlap fixes from iPhone landscape verification */
+@media (orientation: landscape) and (max-height: 620px) {
+    #game .table-felt {
+        top: 58px;
+        bottom: 92px;
+    }
+
+    #game .my-hand-area {
+        right: 150px;
+        bottom: 6px;
+    }
+
+    #game .action-dock {
+        right: 6px;
+        bottom: 8px;
+    }
+}
+
+@media (orientation: landscape) and (max-height: 620px) {
+    #game .my-hand {
+        --hand-card-w: 46px;
+        --hand-card-h: 70px;
+        --hand-card-rank: 1.18rem;
+        --hand-card-suit: 1.24rem;
+    }
+}
+
+@media (orientation: landscape) and (max-height: 620px) {
+    #game .table-shell {
+        height: 100vh;
+        height: 100dvh;
+        min-height: 0;
+        max-height: 100vh;
+        max-height: 100dvh;
+    }
+}
+
+/* UI 2.0 final viewport anchoring */
+@media (orientation: landscape) and (max-height: 620px) {
+    body.landscape-mode #game .table-felt,
+    #game .table-felt {
+        top: 58px !important;
+        bottom: 92px !important;
+    }
+
+    body.landscape-mode #game .my-hand-area,
+    #game .my-hand-area {
+        position: fixed !important;
+        left: 66px !important;
+        right: 150px !important;
+        bottom: 6px !important;
+        top: auto !important;
+        max-height: 112px;
+    }
+
+    body.landscape-mode #game .action-dock,
+    #game .action-dock {
+        position: fixed !important;
+        right: 6px !important;
+        bottom: 8px !important;
+        top: auto !important;
+    }
+
+    body.landscape-mode #game .table-social,
+    #game .table-social {
+        position: fixed !important;
+        right: 10px !important;
+        bottom: 88px !important;
+        left: auto !important;
+        top: auto !important;
+    }
+}
+
+@media (orientation: landscape) and (max-height: 620px) {
+    body.landscape-mode #game .center-message,
+    #game .center-message {
+        top: 23% !important;
+        font-size: clamp(1.25rem, 3.4vw, 1.85rem) !important;
+    }
+
+    body.landscape-mode #game .trump-hint,
+    #game .trump-hint {
+        top: calc(23% + 42px) !important;
+    }
+}
+
+@media (orientation: landscape) and (max-height: 620px) {
+    body.landscape-mode #game .emoji-panel,
+    #game .emoji-panel {
+        justify-self: end;
+        margin-right: 0;
+        transform: translateX(-42px);
+    }
+}
+
+@media (orientation: landscape) and (max-height: 620px) {
+    body.landscape-mode #game .table-social,
+    #game .table-social {
+        bottom: 122px !important;
+    }
+
+    body.landscape-mode #game .emoji-panel,
+    #game .emoji-panel {
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        width: 150px;
+        padding: 4px;
+        gap: 3px;
+        transform: translateX(-28px);
+    }
+
+    body.landscape-mode #game .emoji-choice,
+    #game .emoji-choice {
+        min-height: 24px;
+    }
+}
+
+/* UI 2.0 center text spacing */
+#game .trump-hint {
+    top: calc(34% + 88px) !important;
+}
+
+@media (orientation: landscape) and (max-height: 620px) {
+    body.landscape-mode #game .trump-hint,
+    #game .trump-hint {
+        top: calc(23% + 76px) !important;
+    }
+}
+
+/* UI 2.0 center text final clearance */
+#game .trump-hint {
+    top: calc(34% + 120px) !important;
+}
+
+@media (orientation: landscape) and (max-height: 620px) {
+    body.landscape-mode #game .trump-hint,
+    #game .trump-hint {
+        top: calc(23% + 105px) !important;
+    }
+}
+
+@media (orientation: landscape) and (max-height: 620px) {
+    body.landscape-mode #game .trump-hint,
+    #game .trump-hint {
+        top: 238px !important;
+    }
+}
+
+@media (orientation: landscape) and (max-height: 620px) {
+    body.landscape-mode #game .trump-hint,
+    #game .trump-hint {
+        top: 14px !important;
+        padding: 3px 7px;
+        font-size: 0.62rem;
+    }
+}

@@ -110,10 +110,17 @@ function showScreen(id) {
     document.querySelectorAll(".screen").forEach((screen) => screen.classList.remove("active"));
     $(id).classList.add("active");
     if (id === "game") {
+        if (isMobileViewport()) {
+            setLandscapeMode(true);
+        }
         scheduleHandLayout();
         positionSocialDock();
         settleSocialDockPosition();
     }
+}
+
+function isMobileViewport() {
+    return window.matchMedia("(max-width: 920px), (pointer: coarse)").matches;
 }
 
 function showToast(message) {
@@ -1260,21 +1267,22 @@ function updateHandLayout() {
     const shortLandscape = landscape && window.innerHeight <= 520;
     const tinyLandscape = landscape && window.innerHeight <= 390;
     const densePortrait = portraitMobile && count >= 25;
-    const cardWidth = tinyLandscape ? 31 : shortLandscape ? 34 : landscape ? (narrowLandscape ? 40 : 46) : densePortrait ? (shortPortrait ? 40 : 44) : shortPortrait ? 42 : portraitMobile ? (count >= 21 ? 44 : 46) : 58;
-    const cardHeight = tinyLandscape ? 44 : shortLandscape ? 48 : landscape ? (narrowLandscape ? 56 : 64) : densePortrait ? (shortPortrait ? 56 : 62) : shortPortrait ? 58 : portraitMobile ? (count >= 21 ? 62 : 64) : 82;
-    const minStep = tinyLandscape ? 24 : shortLandscape ? 24 : landscape ? (narrowLandscape ? 24 : 33) : densePortrait ? (shortPortrait ? 24 : 27) : shortPortrait ? 25 : portraitMobile ? 28 : 16;
-    const maxRows = landscape ? (tinyLandscape || shortLandscape ? 2 : narrowLandscape ? 3 : 2) : portraitMobile ? (densePortrait ? 3 : 2) : 2;
+    const ui2Landscape = landscape;
+    const cardWidth = ui2Landscape ? (tinyLandscape ? 47 : shortLandscape ? 46 : 70) : densePortrait ? (shortPortrait ? 40 : 44) : shortPortrait ? 42 : portraitMobile ? (count >= 21 ? 44 : 46) : 58;
+    const cardHeight = ui2Landscape ? (tinyLandscape ? 72 : shortLandscape ? 70 : 108) : densePortrait ? (shortPortrait ? 56 : 62) : shortPortrait ? 58 : portraitMobile ? (count >= 21 ? 62 : 64) : 82;
+    const minStep = ui2Landscape ? (tinyLandscape ? 24 : shortLandscape ? 27 : 34) : densePortrait ? (shortPortrait ? 24 : 27) : shortPortrait ? 25 : portraitMobile ? 28 : 16;
+    const maxRows = ui2Landscape ? 1 : portraitMobile ? (densePortrait ? 3 : 2) : 2;
     const rowConfig = chooseHandRows(count, available, cardWidth, minStep, maxRows);
     const { rows, rowCounts, step } = rowConfig;
-    const rowGap = tinyLandscape ? 2 : shortLandscape ? 3 : landscape ? (narrowLandscape ? 5 : 6) : densePortrait ? (shortPortrait ? 3 : 4) : shortPortrait ? 4 : portraitMobile ? 5 : 10;
-    const lift = tinyLandscape ? 6 : shortLandscape ? 7 : landscape ? (narrowLandscape ? 8 : 12) : densePortrait ? (shortPortrait ? 7 : 9) : shortPortrait ? 9 : portraitMobile ? 12 : 18;
+    const rowGap = ui2Landscape ? 0 : densePortrait ? (shortPortrait ? 3 : 4) : shortPortrait ? 4 : portraitMobile ? 5 : 10;
+    const lift = ui2Landscape ? (tinyLandscape ? 8 : shortLandscape ? 10 : 18) : densePortrait ? (shortPortrait ? 7 : 9) : shortPortrait ? 9 : portraitMobile ? 12 : 18;
     const handHeight = lift + (cardHeight * rows) + (rowGap * (rows - 1)) + 2;
 
     hand.style.setProperty("--hand-card-w", `${cardWidth}px`);
     hand.style.setProperty("--hand-card-h", `${cardHeight}px`);
-    hand.style.setProperty("--hand-card-pad", tinyLandscape || shortLandscape ? "3px" : landscape ? "5px" : densePortrait ? "4px" : shortPortrait ? "4px" : portraitMobile ? "5px" : "7px");
-    hand.style.setProperty("--hand-card-rank", tinyLandscape ? "0.64rem" : shortLandscape ? "0.68rem" : landscape ? "0.86rem" : densePortrait ? "0.8rem" : shortPortrait ? "0.78rem" : portraitMobile ? (count >= 21 ? "0.82rem" : "0.86rem") : "1.05rem");
-    hand.style.setProperty("--hand-card-suit", tinyLandscape ? "0.68rem" : shortLandscape ? "0.72rem" : landscape ? "0.9rem" : densePortrait ? "0.84rem" : shortPortrait ? "0.82rem" : portraitMobile ? (count >= 21 ? "0.86rem" : "0.9rem") : "1.12rem");
+    hand.style.setProperty("--hand-card-pad", ui2Landscape ? (tinyLandscape ? "4px" : "5px") : densePortrait ? "4px" : shortPortrait ? "4px" : portraitMobile ? "5px" : "7px");
+    hand.style.setProperty("--hand-card-rank", ui2Landscape ? (tinyLandscape ? "1.12rem" : shortLandscape ? "1.18rem" : "1.85rem") : densePortrait ? "0.8rem" : shortPortrait ? "0.78rem" : portraitMobile ? (count >= 21 ? "0.82rem" : "0.86rem") : "1.05rem");
+    hand.style.setProperty("--hand-card-suit", ui2Landscape ? (tinyLandscape ? "1.16rem" : shortLandscape ? "1.24rem" : "1.92rem") : densePortrait ? "0.84rem" : shortPortrait ? "0.82rem" : portraitMobile ? (count >= 21 ? "0.86rem" : "0.9rem") : "1.12rem");
     hand.style.setProperty("--hand-height", `${handHeight}px`);
     hand.style.setProperty("--selected-lift", `${lift}px`);
 
