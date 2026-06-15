@@ -865,43 +865,74 @@ class GameRoom:
             n = len(first_cards)
 
             if first_type in ('fudan',):
-                # 跟副单：必须出同花色单牌，或绝门出主单/其他副单
+                # 跟副单：必须出同花色副牌，或绝门出主单/其他副单
                 first_color = first_cards[0].color
-                color_cards = [c for c in all_cards if c.color == first_color]
+                # 只取同花色副牌（排除主牌——当主花色==首出花色时，主花色牌是主牌不是副牌）
+                color_cards = [c for c in all_cards
+                               if c.color == first_color
+                               and not c.is_zhu(self.now_level, self.now_color)]
                 if color_cards:
                     for c in color_cards:
                         options.append({'cards': [c.card_type], 'label': '跟牌'})
                 else:
-                    # 绝门：可出任意牌
+                    # 绝门（无同花色副牌）：可出任意牌
                     for c in all_cards:
                         options.append({'cards': [c.card_type], 'label': '绝门'})
 
             elif first_type in ('fudui',):
                 # 跟副对：有对出对，没对出单
                 first_color = first_cards[0].color
-                color_cards = [c for c in all_cards if c.color == first_color]
-                rank_count = {}
+                # 只取同花色副牌（排除主牌）
+                color_cards = [c for c in all_cards
+                               if c.color == first_color
+                               and not c.is_zhu(self.now_level, self.now_color)]
+                # 两副牌：对子需同name同color
+                rank_color_count = {}
                 for c in color_cards:
-                    if c.name not in rank_count:
-                        rank_count[c.name] = []
-                    rank_count[c.name].append(c)
-                has_pair = any(len(v) >= 2 for v in rank_count.values())
+                    key = (c.name, c.color)
+                    if key not in rank_color_count:
+                        rank_color_count[key] = []
+                    rank_color_count[key].append(c)
+                has_pair = any(len(v) >= 2 for v in rank_color_count.values())
 
                 if has_pair:
-                    for name, cards in rank_count.items():
+                    for (name, color), cards in rank_color_count.items():
                         while len(cards) >= 2:
                             options.append({'cards': [cards[0].card_type, cards[1].card_type],
                                             'label': '跟对'})
                             cards = cards[2:]
                 else:
-                    # 没有对子，出单
-                    for c in color_cards:
-                        options.append({'cards': [c.card_type], 'label': '跟牌(无对)'})
+                    # 没有同花色对子，需要凑2张
+                    if len(color_cards) >= 2:
+                        # 有2张以上同花色单牌
+                        for i in range(len(color_cards)):
+                            for j in range(i+1, min(len(color_cards), i+5)):
+                                options.append({'cards': [color_cards[i].card_type, color_cards[j].card_type],
+                                                'label': '跟牌(2单凑)'})
+                    elif len(color_cards) == 1:
+                        # 只有1张同花色，补1张其他牌
+                        non_color = [c for c in all_cards if c not in color_cards]
+                        for c in non_color[:5]:
+                            options.append({'cards': [color_cards[0].card_type, c.card_type],
+                                            'label': '跟牌(1同+1补)'})
+                    else:
+                        # 绝门，出任意2张
+                        for i in range(min(len(all_cards), 8)):
+                            for j in range(i+1, min(len(all_cards), i+5)):
+                                options.append({'cards': [all_cards[i].card_type, all_cards[j].card_type],
+                                                'label': '绝门出任意2张'})
 
             elif first_type.startswith('fulian') or first_type.startswith('zhulian'):
-                # 跟连对：找同花色连对
-                first_color = first_cards[0].color
-                color_cards = [c for c in all_cards if c.color == first_color]
+                # 跟连对
+                if first_type.startswith('zhulian'):
+                    # 主连对：筛选所有主牌（跨花色）
+                    color_cards = [c for c in all_cards if c.is_zhu(self.now_level, self.now_color)]
+                else:
+                    # 副连对：筛选同花色副牌（排除主牌）
+                    first_color = first_cards[0].color
+                    color_cards = [c for c in all_cards
+                                   if c.color == first_color
+                                   and not c.is_zhu(self.now_level, self.now_color)]
                 if len(color_cards) >= n:
                     # 尝试凑连对
                     rank_groups = {}
@@ -946,25 +977,181 @@ class GameRoom:
                     for c in all_cards:
                         options.append({'cards': [c.card_type], 'label': '出牌'})
 
+            elif first_type in ('zhusan',):
+                # 跟主散牌：有主牌先出主牌（最多n张），不够用副牌补
+                # 规则：必须出n张牌（手牌足够时）
+                zhu_cards = [c for c in all_cards if c.is_zhu(self.now_level, self.now_color)]
+                fu_cards = [c for c in all_cards if not c.is_zhu(self.now_level, self.now_color)]
+                must_zhu = min(len(zhu_cards), n)
+                total_in_hand = len(all_cards)
+                
+                if total_in_hand < n:
+                    # 手牌不够n张，全部出
+                    options.append({'cards': [c.card_type for c in all_cards], 'label': '跟主散(全出)'})
+                elif must_zhu >= n:
+                    # 主牌够n张，出n张主牌
+                    # 枚举不同组合（取前几组避免爆炸）
+                    if n == 1:
+                        for c in zhu_cards:
+                            options.append({'cards': [c.card_type], 'label': '跟主散'})
+                    elif n == 2:
+                        for i in range(min(len(zhu_cards), 5)):
+                            for j in range(i+1, min(len(zhu_cards), i+5)):
+                                options.append({'cards': [zhu_cards[i].card_type, zhu_cards[j].card_type],
+                                                'label': '跟主散'})
+                    else:
+                        options.append({'cards': [c.card_type for c in zhu_cards[:n]],
+                                        'label': '跟主散'})
+                elif must_zhu > 0:
+                    # 有主牌但不够n张，出must_zhu张主牌+剩余用副牌补
+                    remaining = n - must_zhu
+                    if len(fu_cards) >= remaining:
+                        # 枚举：前must_zhu张主牌 + 前remaining张副牌
+                        base = [c.card_type for c in zhu_cards[:must_zhu]]
+                        # 简化：取前remaining张副牌
+                        for fi_start in range(min(len(fu_cards) - remaining + 1, 5)):
+                            fu_pick = [c.card_type for c in fu_cards[fi_start:fi_start+remaining]]
+                            options.append({'cards': base + fu_pick, 'label': '跟主散+副补'})
+                    else:
+                        # 副牌也不够，出所有牌
+                        options.append({'cards': [c.card_type for c in all_cards[:n]], 'label': '跟主散(不够补)'})
+                else:
+                    # 无主牌，出n张副牌
+                    if n == 1:
+                        for c in fu_cards:
+                            options.append({'cards': [c.card_type], 'label': '出副牌'})
+                    elif n == 2:
+                        for i in range(min(len(fu_cards), 5)):
+                            for j in range(i+1, min(len(fu_cards), i+5)):
+                                options.append({'cards': [fu_cards[i].card_type, fu_cards[j].card_type],
+                                                'label': '出副牌'})
+                    else:
+                        options.append({'cards': [c.card_type for c in fu_cards[:n]], 'label': '出副牌'})
+
+            elif first_type in ('fusan',):
+                # 跟副散牌：有同花色副牌先出，不够用主牌/其他副牌补
+                # 规则：必须出n张牌（手牌足够时），不足n张时全部出
+                first_color = first_cards[0].color
+                # 同花色副牌（排除主牌）
+                color_fu = [c for c in all_cards
+                            if c.color == first_color
+                            and not c.is_zhu(self.now_level, self.now_color)]
+                zhu_cards = [c for c in all_cards if c.is_zhu(self.now_level, self.now_color)]
+                other_fu = [c for c in all_cards
+                            if c.color != first_color
+                            and not c.is_zhu(self.now_level, self.now_color)]
+                total_in_hand = len(all_cards)
+                must_color = min(len(color_fu), n)
+                
+                if total_in_hand < n:
+                    # 手牌不够n张，全部出
+                    options.append({'cards': [c.card_type for c in all_cards], 'label': '跟副散(全出)'})
+                elif len(color_fu) >= n:
+                    # 有足够同花色副牌
+                    if n == 1:
+                        for c in color_fu:
+                            options.append({'cards': [c.card_type], 'label': '跟副散'})
+                    elif n == 2:
+                        for i in range(min(len(color_fu), 5)):
+                            for j in range(i+1, min(len(color_fu), i+5)):
+                                options.append({'cards': [color_fu[i].card_type, color_fu[j].card_type],
+                                                'label': '跟副散'})
+                    else:
+                        options.append({'cards': [c.card_type for c in color_fu[:n]],
+                                        'label': '跟副散'})
+                elif len(color_fu) > 0:
+                    # 同花色副牌不够n张，必须先出完同花色，剩余用主牌补
+                    remaining = n - len(color_fu)
+                    if len(zhu_cards) >= remaining:
+                        # 主牌够补
+                        base = [c.card_type for c in color_fu]
+                        if remaining == 1:
+                            for zc in zhu_cards[:5]:
+                                options.append({'cards': base + [zc.card_type], 'label': '跟副散+主补'})
+                        else:
+                            options.append({'cards': base + [c.card_type for c in zhu_cards[:remaining]],
+                                            'label': '跟副散+主补'})
+                    else:
+                        # 主牌也不够补，出所有同花色+所有主牌+尽可能多的其他副牌
+                        still_need = n - len(color_fu) - len(zhu_cards)
+                        base = [c.card_type for c in color_fu] + [c.card_type for c in zhu_cards]
+                        if still_need > 0 and len(other_fu) >= still_need:
+                            base += [c.card_type for c in other_fu[:still_need]]
+                        elif still_need > 0:
+                            base += [c.card_type for c in other_fu]
+                        options.append({'cards': base, 'label': '跟副散+主补+副补'})
+                else:
+                    # 绝门：无同花色副牌，必须先出主牌
+                    must_zhu = min(len(zhu_cards), n)
+                    if len(zhu_cards) >= n:
+                        # 主牌够n张
+                        if n == 1:
+                            for c in zhu_cards:
+                                options.append({'cards': [c.card_type], 'label': '绝门出主牌'})
+                        elif n == 2:
+                            for i in range(min(len(zhu_cards), 5)):
+                                for j in range(i+1, min(len(zhu_cards), i+5)):
+                                    options.append({'cards': [zhu_cards[i].card_type, zhu_cards[j].card_type],
+                                                    'label': '绝门出主牌'})
+                        else:
+                            options.append({'cards': [c.card_type for c in zhu_cards[:n]], 'label': '绝门出主牌'})
+                    elif must_zhu > 0:
+                        # 主牌不够n张，补其他副牌
+                        remaining = n - must_zhu
+                        base = [c.card_type for c in zhu_cards[:must_zhu]]
+                        if len(other_fu) >= remaining:
+                            options.append({'cards': base + [c.card_type for c in other_fu[:remaining]],
+                                            'label': '绝门主+副补'})
+                        else:
+                            options.append({'cards': base + [c.card_type for c in other_fu],
+                                            'label': '绝门主+副补(不够)'})
+                    else:
+                        # 无主牌无同花色，出任意n张
+                        options.append({'cards': [c.card_type for c in all_cards[:n]],
+                                        'label': '绝门出任意牌'})
+
             elif first_type in ('zhudui',):
                 # 跟主对
                 zhu_cards = [c for c in all_cards if c.is_zhu(self.now_level, self.now_color)]
-                rank_count = {}
+                # 两副牌：对子需同name同color（如2-1-b×2），同name不同color不是对子
+                rank_color_count = {}
                 for c in zhu_cards:
-                    if c.name not in rank_count:
-                        rank_count[c.name] = []
-                    rank_count[c.name].append(c)
-                has_pair = any(len(v) >= 2 for v in rank_count.values())
+                    key = (c.name, c.color)
+                    if key not in rank_color_count:
+                        rank_color_count[key] = []
+                    rank_color_count[key].append(c)
+                has_pair = any(len(v) >= 2 for v in rank_color_count.values())
 
                 if has_pair:
-                    for name, cards in rank_count.items():
+                    for (name, color), cards in rank_color_count.items():
                         while len(cards) >= 2:
                             options.append({'cards': [cards[0].card_type, cards[1].card_type],
                                             'label': '跟主对'})
                             cards = cards[2:]
                 else:
-                    for c in zhu_cards:
-                        options.append({'cards': [c.card_type], 'label': '跟主牌(无对)'})
+                    # 无主对时，必须出最大的2张主牌（_validate_follow要求）
+                    # 两副牌中主牌按get_zhu_rank排序，取最大2张
+                    zhu_sorted = sorted(zhu_cards, 
+                                        key=lambda c: get_zhu_rank(c, self.now_level, self.now_color),
+                                        reverse=True)
+                    if len(zhu_sorted) >= 2:
+                        options.append({'cards': [zhu_sorted[0].card_type, zhu_sorted[1].card_type],
+                                        'label': '跟主牌(最大2张)'})
+                    elif len(zhu_sorted) == 1:
+                        # 只有1张主牌+1张副牌补齐
+                        non_zhu = [c for c in all_cards if not c.is_zhu(self.now_level, self.now_color)]
+                        if non_zhu:
+                            options.append({'cards': [zhu_sorted[0].card_type, non_zhu[0].card_type],
+                                            'label': '跟主牌+副牌补'})
+                        else:
+                            options.append({'cards': [zhu_sorted[0].card_type],
+                                            'label': '仅1张主牌'})
+                    # 无主牌时出任意2张
+                    if not zhu_sorted:
+                        for i in range(min(len(all_cards), 2)):
+                            for j in range(i+1, len(all_cards)):
+                                options.append({'cards': [all_cards[i].card_type, all_cards[j].card_type],
+                                                'label': '无主牌出任意2张'})
 
             else:
                 # 其他情况：按同数量出
@@ -1514,11 +1701,15 @@ class GameRoom:
         if not player:
             return {'status': 'error', 'msg': '无效座位'}
 
-        # 验证牌在手中
-        hand_strs = player.hand_to_str_list()
-        for cs in card_strs:
-            if cs not in hand_strs:
+        # 验证牌在手中（使用Counter防止出重复牌：手中1张出2张）
+        from collections import Counter as _Counter
+        hand_counts = _Counter(player.hand_to_str_list())
+        play_counts = _Counter(card_strs)
+        for cs, count in play_counts.items():
+            if cs not in hand_counts:
                 return {'status': 'error', 'msg': '出的牌不在手中'}
+            if count > hand_counts[cs]:
+                return {'status': 'error', 'msg': f'出的牌数量超过手中数量({cs})'}
 
         played_cards = [card_from_str(s) for s in card_strs]
 
@@ -1697,7 +1888,7 @@ class GameRoom:
             # (上面已确保出了must_play_color张同花色)
 
             # 对于副牌对子/连对的特殊处理
-            if first_type in ('fudui',) or first_type.startswith('fulian') and hand_color_count >= 2:
+            if (first_type in ('fudui',) or first_type.startswith('fulian')) and hand_color_count >= 2:
                 # 有足够同花色副牌，检查是否出了对子
                 color_names: dict[str, int] = {}
                 for c in hand_color_fu:
