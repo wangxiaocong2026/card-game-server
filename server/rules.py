@@ -17,9 +17,11 @@ def get_dui_and_liandui(cards_in_hand: dict[str, list[Card]]):
     for cards in cards_in_hand.values():
         all_cards.extend(cards)
 
-    # 按花色分组
+    # 按花色分组（王不参与花色分组，单独提取到kings）
     color_cards: dict[str, list[Card]] = {}
     for card in all_cards:
+        if card.is_joker:
+            continue
         if card.color not in color_cards:
             color_cards[card.color] = []
         color_cards[card.color].append(card)
@@ -49,26 +51,34 @@ def get_dui_and_liandui(cards_in_hand: dict[str, list[Card]]):
 
         dui_dict[color] = sorted(dui_list, key=lambda c: c.rank)
 
-        # 提取连对
+        # 提取连对（基于对子rank序列检测连续rank）
         liandui_list: list[list[Card]] = []
         sorted_dui = sorted(dui_list, key=lambda c: c.rank)
 
-        if len(sorted_dui) >= 4:
+        # 按rank分组提取对子（每对用2张Card表示）
+        dui_by_rank: dict[int, list[Card]] = {}
+        for card in sorted_dui:
+            if card.rank not in dui_by_rank:
+                dui_by_rank[card.rank] = []
+            dui_by_rank[card.rank].append(card)
+
+        sorted_ranks = sorted(dui_by_rank.keys())
+
+        if len(sorted_ranks) >= 2:
             i = 0
-            while i < len(sorted_dui):
-                chain = [sorted_dui[i], sorted_dui[i + 1]] if i + 1 < len(sorted_dui) else []
-                if len(chain) == 2 and chain[0].rank + 1 == chain[1].rank:
-                    # 连对起点
-                    j = i + 2
-                    while j + 1 < len(sorted_dui) and sorted_dui[j].rank == sorted_dui[j - 2].rank + 1:
-                        chain.append(sorted_dui[j])
-                        chain.append(sorted_dui[j + 1])
-                        j += 2
-                    if len(chain) >= 4:
-                        liandui_list.append(chain)
-                    i = j
-                else:
-                    i += 2
+            while i < len(sorted_ranks):
+                chain_ranks = [sorted_ranks[i]]
+                j = i + 1
+                while j < len(sorted_ranks) and sorted_ranks[j] == sorted_ranks[j - 1] + 1:
+                    chain_ranks.append(sorted_ranks[j])
+                    j += 1
+                if len(chain_ranks) >= 2:
+                    # 连对：收集所有对子的牌
+                    chain_cards = []
+                    for r in chain_ranks:
+                        chain_cards.extend(dui_by_rank[r])
+                    liandui_list.append(chain_cards)
+                i = j if j > i + 1 else i + 1
 
         if liandui_list:
             liandui_dict[color] = liandui_list
@@ -127,8 +137,15 @@ def card_type_analyze(dan_dict, kings, dui_dict, liandui_dict,
             fuliandui[color] = fu_chains
         zhuliandui.extend(zhu_chains)
 
-    # 分类王和固定主
-    zhudan.extend(kings)
+    # 分类王：同card_type≥2的成对放入zhudui，单张放入zhudan
+    kings_grouped: dict[str, list[Card]] = {}
+    for card in kings:
+        kings_grouped.setdefault(card.card_type, []).append(card)
+    for card_type, group in kings_grouped.items():
+        while len(group) >= 2:
+            zhudui.extend(group[:2])
+            group = group[2:]
+        zhudan.extend(group)
     zhudan.sort(key=lambda c: c.rank)
     zhudui.sort(key=lambda c: c.rank)
 
@@ -265,7 +282,9 @@ def get_zhu_rank(card: Card, now_level: str, now_color: Optional[str]) -> int:
     if card.is_small_joker:
         return 99
     if card.name == now_level:
-        return 80 + (10 if card.color == now_color else 0) + card.rank
+        # 级牌：主花色级牌90，其他花色级牌80，确保不超过小王(99)
+        # 不再加card.rank，避免A(rank=13)时103超过大王100
+        return 80 + (10 if card.color == now_color else 0)
     if card.name == '5':
         return 60 + (10 if card.color == now_color else 0)
     if card.name == '3':
@@ -430,10 +449,17 @@ def compare_outcards(cards1: list[Card], cards2: list[Card],
 
     all_zhu1 = all(c.is_zhu(now_level, now_color) for c in cards1)
     all_zhu2 = all(c.is_zhu(now_level, now_color) for c in cards2)
+    has_zhu1 = any(c.is_zhu(now_level, now_color) for c in cards1)
+    has_zhu2 = any(c.is_zhu(now_level, now_color) for c in cards2)
 
+    # 同牌型下，有主牌的一方胜过纯副牌（含混合牌）
     if all_zhu1 and not all_zhu2:
         return True
     if not all_zhu1 and all_zhu2:
+        return False
+    if has_zhu1 and not has_zhu2:
+        return True
+    if not has_zhu1 and has_zhu2:
         return False
 
     if all_zhu1 and all_zhu2:
