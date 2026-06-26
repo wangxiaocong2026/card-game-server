@@ -1,0 +1,181 @@
+<view class="game-page">
+  <view class="hud">
+    <view class="hud-item">
+      <text>房间</text>
+      <text class="hud-value">{{roomId || '--'}}</text>
+    </view>
+    <view class="hud-item">
+      <text>阶段</text>
+      <text class="hud-value">{{phaseLabel}}</text>
+    </view>
+    <view class="hud-item">
+      <text>级牌</text>
+      <text class="hud-value">{{state.now_level || 'A'}}</text>
+    </view>
+    <view class="hud-item trump">
+      <text>主花色</text>
+      <text class="hud-value {{trumpRed ? 'red' : ''}}">{{trumpLabel}}</text>
+    </view>
+    <view class="hud-item">
+      <text>闲家分</text>
+      <text class="hud-value">{{state.score_now || 0}}</text>
+    </view>
+  </view>
+
+  <view class="table">
+    <view class="top-tools">
+      <button class="tool-btn" bindtap="requestSuggestion">建议</button>
+      <button class="tool-btn" bindtap="leaveRoom">退出</button>
+    </view>
+
+    <view class="opponent top {{players.top.active ? 'active' : ''}}">
+      <view class="avatar">{{players.top.avatar}}</view>
+      <view class="player-text">
+        <text class="player-name">{{players.top.name}}</text>
+        <text>{{players.top.count}} 张</text>
+        <text class="role">{{players.top.role}}</text>
+      </view>
+    </view>
+
+    <view class="opponent left {{players.left.active ? 'active' : ''}}">
+      <view class="avatar">{{players.left.avatar}}</view>
+      <view class="player-text">
+        <text class="player-name">{{players.left.name}}</text>
+        <text>{{players.left.count}} 张</text>
+        <text class="role">{{players.left.role}}</text>
+      </view>
+    </view>
+
+    <view class="opponent right {{players.right.active ? 'active' : ''}}">
+      <view class="avatar">{{players.right.avatar}}</view>
+      <view class="player-text">
+        <text class="player-name">{{players.right.name}}</text>
+        <text>{{players.right.count}} 张</text>
+        <text class="role">{{players.right.role}}</text>
+      </view>
+    </view>
+
+    <view class="kitty {{koupaiCards.length ? 'open' : ''}}">
+      <text>{{koupaiCards.length ? '已扣底牌' : '底牌区'}}</text>
+      <view class="mini-row">
+        <block wx:for="{{displayKittyCards}}" wx:key="key">
+          <view
+            class="card mini {{item.red ? 'red' : ''}} {{item.pickable ? 'pickable' : ''}} {{item.selected ? 'selected' : ''}}"
+            data-index="{{index}}"
+            bindtap="toggleOfferCard"
+          >
+            <text class="rank">{{item.displayRank}}</text>
+            <text class="suit">{{item.suit}}</text>
+          </view>
+        </block>
+      </view>
+    </view>
+
+    <view class="center">
+      <view class="turn-banner">{{centerMessage}}</view>
+      <view class="trump-pill">
+        <text>当前主牌</text>
+        <text class="trump-name {{trumpRed ? 'red' : ''}}">{{trumpLabel}}</text>
+        <text class="trump-sub">王 · {{state.now_level || 'A'}} · 5 · 3 · 2 集中排列</text>
+      </view>
+
+      <view class="played-grid">
+        <view class="played top-slot">
+          <block wx:for="{{played.top}}" wx:key="key">
+            <view class="card small {{item.red ? 'red' : ''}}">
+              <text class="rank">{{item.displayRank}}</text>
+              <text class="suit">{{item.suit}}</text>
+            </view>
+          </block>
+        </view>
+        <view class="played left-slot">
+          <block wx:for="{{played.left}}" wx:key="key">
+            <view class="card small {{item.red ? 'red' : ''}}">
+              <text class="rank">{{item.displayRank}}</text>
+              <text class="suit">{{item.suit}}</text>
+            </view>
+          </block>
+        </view>
+        <view class="played right-slot">
+          <block wx:for="{{played.right}}" wx:key="key">
+            <view class="card small {{item.red ? 'red' : ''}}">
+              <text class="rank">{{item.displayRank}}</text>
+              <text class="suit">{{item.suit}}</text>
+            </view>
+          </block>
+        </view>
+        <view class="played bottom-slot">
+          <block wx:for="{{played.bottom}}" wx:key="key">
+            <view class="card small {{item.red ? 'red' : ''}}">
+              <text class="rank">{{item.displayRank}}</text>
+              <text class="suit">{{item.suit}}</text>
+            </view>
+          </block>
+        </view>
+      </view>
+    </view>
+
+    <view class="my-panel {{players.me.active ? 'active' : ''}}">
+      <view class="my-avatar">我</view>
+      <view class="my-meta">
+        <text class="player-name">{{players.me.name}}</text>
+        <text>{{players.me.count}} 张</text>
+        <text class="role">{{players.me.role}}</text>
+      </view>
+      <view class="hand-prompt">{{handPrompt}}</view>
+      <view class="hand">
+        <block wx:for="{{handCards}}" wx:key="key">
+          <view
+            class="card hand-card {{item.red ? 'red' : ''}} {{item.selected ? 'selected' : ''}} {{item.disabled ? 'disabled' : ''}}"
+            data-index="{{index}}"
+            bindtap="toggleCard"
+          >
+            <text class="rank">{{item.displayRank}}</text>
+            <text class="suit">{{item.suit}}</text>
+          </view>
+        </block>
+      </view>
+    </view>
+  </view>
+
+  <view class="actions">
+    <button wx:if="{{canLiang}}" class="action warning" bindtap="openLiangModal">{{liangButtonText}}</button>
+    <button wx:if="{{canPass}}" class="action ghost" bindtap="passLiang">{{passButtonText}}</button>
+    <button wx:if="{{canKoupai}}" class="action warning" bindtap="submitKoupai">扣牌</button>
+    <button wx:if="{{canHuanpai}}" class="action warning" bindtap="acceptHuanpai">拾牌</button>
+    <button wx:if="{{canHuanpai}}" class="action ghost" bindtap="passHuanpai">不拾</button>
+    <button wx:if="{{canSuggest}}" class="action ghost" bindtap="requestSuggestion">智能建议</button>
+    <button wx:if="{{canPlay}}" class="action primary" bindtap="playCards">出牌</button>
+  </view>
+
+  <view wx:if="{{liangModalVisible}}" class="modal-mask" bindtap="closeLiangModal">
+    <view class="modal" catchtap="noop">
+      <view class="modal-title">{{state.phase === 'chipai' ? '选择吃牌牌型' : '选择亮主花色'}}</view>
+      <block wx:for="{{liangOptions}}" wx:key="index">
+        <button class="liang-option" data-index="{{index}}" bindtap="chooseLiang">
+          <text class="{{item.red ? 'red' : ''}}">{{item.suit}}</text>
+          <view>
+            <text class="option-title">{{item.title}}</text>
+            <text class="option-sub">{{item.cardsText}}</text>
+          </view>
+        </button>
+      </block>
+      <button class="modal-close" bindtap="closeLiangModal">取消</button>
+    </view>
+  </view>
+
+  <view wx:if="{{resultVisible}}" class="modal-mask">
+    <view class="modal result">
+      <view class="modal-title">本局结束</view>
+      <view class="result-grid">
+        <text>闲家得分</text><text class="result-value">{{gameResult.score_now || 0}}</text>
+        <text>闲家扣底分</text><text class="result-value">{{gameResult.xianjia_koudi_score || 0}}</text>
+        <text>胜方</text><text class="result-value">{{gameResult.winner_team === 'banker' ? '庄家' : '闲家'}}</text>
+        <text>升级</text><text class="result-value">{{gameResult.levels || 0}} 级</text>
+        <text>下局级牌</text><text class="result-value">{{gameResult.next_level || '--'}}</text>
+      </view>
+      <button class="action primary wide" bindtap="continueNextGame">继续下一局</button>
+      <button class="modal-close" bindtap="leaveRoom">返回首页</button>
+    </view>
+  </view>
+</view>

@@ -1,0 +1,38 @@
+<view class="page">
+  <view class="hero">
+    <image class="avatar" src="/assets/avatar.png" mode="aspectFill" />
+    <view class="title-block">
+      <text class="kicker">四人策略棋牌</text>
+      <text class="title">董事会升级</text>
+      <text class="subtitle">亮主、扣底、抓分、升级，把一局牌打成一场董事会博弈。</text>
+    </view>
+  </view>
+
+  <view class="panel">
+    <view class="row">
+      <text class="label">模式</text>
+      <text class="value">四人实时对局</text>
+    </view>
+    <view class="row">
+      <text class="label">服务器</text>
+      <text class="value">{{serverLabel}}</text>
+    </view>
+    <view class="row">
+      <text class="label">当前接入</text>
+      <text class="value">原生小程序版</text>
+    </view>
+  </view>
+
+  <button class="primary" loading="{{creating}}" disabled="{{creating}}" bindtap="startRobotGame">
+    {{creating ? '正在开局' : '人机试玩'}}
+  </button>
+
+  <view class="join-card">
+    <input class="room-input" value="{{roomId}}" maxlength="8" placeholder="输入房间号" bindinput="onRoomInput" />
+    <button class="secondary" bindtap="joinRoom">加入房间</button>
+  </view>
+
+  <view class="notice">
+    <text>当前为原生小程序页面，直接使用 wx.request 与 wx.connectSocket 连接服务端。提交审核前需要使用 HTTPS/WSS 域名，并在小程序后台配置合法域名。</text>
+  </view>
+</view>

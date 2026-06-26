@@ -1,0 +1,61 @@
+{
+  "description": "Boardroom Upgrade WeChat minigame",
+  "compileType": "game",
+  "libVersion": "3.7.12",
+  "appid": "wx0fca43d606f887ee",
+  "projectname": "boardroom-upgrade-minigame",
+  "miniprogramRoot": "./",
+  "packOptions": {
+    "ignore": [
+      {
+        "value": "_docs",
+        "type": "folder"
+      },
+      {
+        "value": ".md",
+        "type": "suffix"
+      },
+      {
+        "value": ".ps1",
+        "type": "suffix"
+      }
+    ],
+    "include": []
+  },
+  "setting": {
+    "urlCheck": false,
+    "es6": true,
+    "enhance": true,
+    "postcss": true,
+    "minified": true,
+    "newFeature": true,
+    "nodeModules": false,
+    "autoAudits": false,
+    "checkInvalidKey": true,
+    "checkSiteMap": false,
+    "compileHotReLoad": false,
+    "useIsolateContext": true,
+    "disableSWC": true,
+    "compileWorklet": false,
+    "uglifyFileName": false,
+    "uploadWithSourceMap": true,
+    "packNpmManually": false,
+    "packNpmRelationList": [],
+    "minifyWXSS": true,
+    "minifyWXML": true,
+    "localPlugins": false,
+    "disableUseStrict": false,
+    "useCompilerPlugins": false,
+    "condition": false,
+    "swc": false,
+    "babelSetting": {
+      "ignore": [],
+      "disablePlugins": [],
+      "outputPath": ""
+    }
+  },
+  "condition": {},
+  "editorSetting": {},
+  "simulatorPluginLibVersion": {},
+  "isGameTourist": false
+}

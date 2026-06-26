@@ -1,0 +1,16 @@
+{
+  "pages": [
+    "pages/home/index",
+    "pages/game/index"
+  ],
+  "window": {
+    "navigationBarTitleText": "董事会升级",
+    "navigationBarBackgroundColor": "#08362f",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#071c18",
+    "backgroundTextStyle": "light"
+  },
+  "style": "v2",
+  "lazyCodeLoading": "requiredComponents",
+  "sitemapLocation": "sitemap.json"
+}

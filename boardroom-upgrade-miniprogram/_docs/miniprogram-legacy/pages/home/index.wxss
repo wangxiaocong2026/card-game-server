@@ -1,0 +1,139 @@
+.page {
+  box-sizing: border-box;
+  min-height: 100vh;
+  padding: 56rpx 36rpx calc(48rpx + env(safe-area-inset-bottom));
+  background:
+    radial-gradient(circle at 84% 10%, rgba(220, 174, 69, 0.22), transparent 24%),
+    linear-gradient(180deg, #0f4b40, #071c18 58%, #04100e);
+}
+
+.hero {
+  display: flex;
+  align-items: center;
+  gap: 28rpx;
+}
+
+.avatar {
+  width: 152rpx;
+  height: 152rpx;
+  border-radius: 34rpx;
+  border: 3rpx solid rgba(247, 217, 129, 0.78);
+  box-shadow: 0 18rpx 42rpx rgba(0, 0, 0, 0.32);
+}
+
+.title-block {
+  flex: 1;
+  min-width: 0;
+}
+
+.kicker,
+.subtitle,
+.label {
+  color: rgba(247, 241, 209, 0.72);
+}
+
+.kicker {
+  display: block;
+  font-size: 24rpx;
+  letter-spacing: 2rpx;
+}
+
+.title {
+  display: block;
+  margin-top: 8rpx;
+  color: #ffe188;
+  font-size: 50rpx;
+  font-weight: 800;
+  line-height: 1.08;
+}
+
+.subtitle {
+  display: block;
+  margin-top: 14rpx;
+  font-size: 26rpx;
+  line-height: 1.55;
+}
+
+.panel {
+  margin-top: 56rpx;
+  padding: 10rpx 28rpx;
+  border: 1rpx solid rgba(255, 255, 255, 0.14);
+  border-radius: 18rpx;
+  background: rgba(4, 21, 18, 0.58);
+  box-shadow: inset 0 1rpx 0 rgba(255, 255, 255, 0.08);
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  gap: 24rpx;
+  padding: 24rpx 0;
+  border-bottom: 1rpx solid rgba(255, 255, 255, 0.08);
+  font-size: 28rpx;
+}
+
+.row:last-child {
+  border-bottom: 0;
+}
+
+.value {
+  color: #fff8d8;
+  font-weight: 700;
+  text-align: right;
+}
+
+.primary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 96rpx;
+  margin-top: 44rpx;
+  border-radius: 18rpx;
+  background: linear-gradient(180deg, #f5d06d, #bc8220);
+  color: #10221e;
+  font-size: 32rpx;
+  font-weight: 800;
+  box-shadow: 0 18rpx 34rpx rgba(0, 0, 0, 0.26);
+}
+
+.primary::after,
+.secondary::after {
+  border: 0;
+}
+
+.join-card {
+  display: grid;
+  grid-template-columns: 1fr 180rpx;
+  gap: 18rpx;
+  margin-top: 24rpx;
+}
+
+.room-input {
+  box-sizing: border-box;
+  height: 88rpx;
+  padding: 0 26rpx;
+  border: 1rpx solid rgba(255, 255, 255, 0.16);
+  border-radius: 16rpx;
+  background: rgba(2, 16, 14, 0.66);
+  color: #fff8d8;
+  font-size: 28rpx;
+}
+
+.secondary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 88rpx;
+  border-radius: 16rpx;
+  background: rgba(255, 255, 255, 0.92);
+  color: #10221e;
+  font-size: 28rpx;
+  font-weight: 800;
+}
+
+.notice {
+  margin-top: 28rpx;
+  color: rgba(247, 241, 209, 0.64);
+  font-size: 24rpx;
+  line-height: 1.6;
+}

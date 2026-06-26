@@ -1,0 +1,60 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Boardroom Upgrade Minigame UI Preview</title>
+  <style>
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      background: #202020;
+      display: grid;
+      place-items: center;
+    }
+    canvas {
+      width: min(100vw, 2048px);
+      aspect-ratio: 2048 / 945;
+      background: #111;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="preview" width="2048" height="945"></canvas>
+  <script>
+    const canvas = document.getElementById("preview");
+    const ctx = canvas.getContext("2d");
+    const s = 1, ox = 0, oy = 0;
+    function rect(id,x,y,w,h){ return {id,x,y,w,h,right:x+w,bottom:y+h}; }
+    function roundPath(x,y,w,h,r){ const rr=Math.min(r,w/2,h/2); ctx.beginPath(); ctx.moveTo(x+rr,y); ctx.lineTo(x+w-rr,y); ctx.quadraticCurveTo(x+w,y,x+w,y+rr); ctx.lineTo(x+w,y+h-rr); ctx.quadraticCurveTo(x+w,y+h,x+w-rr,y+h); ctx.lineTo(x+rr,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-rr); ctx.lineTo(x,y+rr); ctx.quadraticCurveTo(x,y,x+rr,y); ctx.closePath(); }
+    function fillRound(b,r,c){ roundPath(b.x,b.y,b.w,b.h,r); ctx.fillStyle=c; ctx.fill(); }
+    function strokeRound(b,r,c,l=1){ roundPath(b.x,b.y,b.w,b.h,r); ctx.strokeStyle=c; ctx.lineWidth=l; ctx.stroke(); }
+    function text(v,x,y,size,c,align="center",weight="normal"){ ctx.font=`${weight} ${size}px Arial,sans-serif`; ctx.textAlign=align; ctx.textBaseline="middle"; ctx.fillStyle=c; ctx.fillText(String(v),x,y); }
+    function fit(v,x,y,maxW,maxS,minS,c,align="center",weight="bold"){ let size=maxS; ctx.font=`${weight} ${size}px Arial,sans-serif`; while(size>minS && ctx.measureText(String(v)).width>maxW){size--; ctx.font=`${weight} ${size}px Arial,sans-serif`;} text(v,x,y,size,c,align,weight); }
+    function poly(points, fill, stroke, line=1){ ctx.beginPath(); points.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1])); ctx.closePath(); if(fill){ctx.fillStyle=fill; ctx.fill();} if(stroke){ctx.strokeStyle=stroke; ctx.lineWidth=line; ctx.stroke();} }
+    function drawCard(b, d){ const g=ctx.createLinearGradient(b.x,b.y,b.x,b.bottom); g.addColorStop(0,"#fbfaf7"); g.addColorStop(1,"#e3e0db"); fillRound(b,8,g); strokeRound(b,8,"#bdb8b0",1); const color=d[2]==="red"?"#b6262c":"#151515"; if(d[0]==="JOKER"){["J","O","K","E","R"].forEach((ch,i)=>text(ch,b.x+b.w*.34,b.y+b.h*(.12+i*.14),27,color,"center","bold"));} else {fit(d[0],b.x+b.w*.34,b.y+b.h*.18,b.w*.58,43,13,color); text(d[1],b.x+b.w*.5,b.y+b.h*.42,40,color,"center","bold"); if(b.w>58&&b.h>180) text(d[1],b.x+b.w*.72,b.y+b.h*.78,88,color,"center","bold");}}
+    const hand=[["JOKER","","red"],["JOKER","","black"],["7","♠","black"],["7","♣","black"],["7","♣","black"],["K","♠","black"],["9","♠","black"],["5","♠","black"],["4","♠","black"],["3","♠","black"],["J","♥","red"],["2","♥","red"],["A","♣","black"],["K","♣","black"],["Q","♣","black"],["J","♣","black"],["10","♣","black"],["10","♣","black"],["9","♣","black"],["8","♣","black"],["3","♣","black"],["2","♣","black"],["A","♦","red"],["J","♦","red"],["9","♦","red"]];
+    const bg=ctx.createLinearGradient(0,0,2048,945); bg.addColorStop(0,"#7b5239"); bg.addColorStop(.32,"#b98452"); bg.addColorStop(.55,"#dfb478"); bg.addColorStop(1,"#69452d"); ctx.fillStyle=bg; ctx.fillRect(0,0,2048,945);
+    ctx.globalAlpha=.16; for(let x=-20;x<2120;x+=88){ctx.fillStyle=x%2?"#3f2418":"#e2b777"; ctx.fillRect(x,0,2,945);} ctx.globalAlpha=1;
+    poly([[115,38],[1886,32],[2010,892],[42,900]],"#3a302a","rgba(0,0,0,.35)",4);
+    poly([[192,88],[1810,88],[1948,850],[66,850]],"#169485","#30413c",10);
+    const shade=ctx.createLinearGradient(0,0,0,945); shade.addColorStop(0,"rgba(255,255,255,.22)"); shade.addColorStop(.38,"rgba(18,150,135,.05)"); shade.addColorStop(1,"rgba(0,34,36,.36)"); poly([[192,88],[1810,88],[1948,850],[66,850]],shade,null);
+    fillRound(rect("m",90,26,86,86),5,"rgba(32,43,54,.92)"); text("☷",133,69,48,"#d9eef7","center","bold");
+    [["我方","7"],["对方","7♠"],["单张","1倍"],["抓分","0"]].forEach((p,i)=>{const b=rect("p",194+i*90,26,i===3?118:84,84); fillRound(b,2,"rgba(32,43,54,.86)"); fit(p[0],b.x+b.w/2,b.y+b.h*.27,b.w-8,25,11,"#dff5ac"); fit(p[1],b.x+b.w/2,b.y+b.h*.68,b.w-8,32,13,i===3?"#f4d545":"#fff");});
+    fillRound(rect("month",585,30,58,38),2,"rgba(194,197,232,.92)"); strokeRound(rect("monthS",585,30,58,38),2,"rgba(255,255,255,.38)",2); text("月",614,49,26,"#e9ecff","center","bold"); text("≋",688,47,30,"#baf7e6","center","bold"); ctx.strokeStyle="#baf7e6"; ctx.lineWidth=2; ctx.strokeRect(720,34,34,20); ctx.fillStyle="#baf7e6"; ctx.fillRect(756,40,4,8); text("00:30",800,46,21,"#d5f5ef");
+    fillRound(rect("promo",1550,32,220,88),4,"#fff2dc"); ctx.fillStyle="#ee8240"; ctx.fillRect(1550,32,220,42); fit("再赢36倍",1660,54,204,28,12,"#fff"); fit("Ⓦ x30万",1660,95,204,24,12,"#7a5430"); text("•••",1839,63,34,"#fff","center","bold"); strokeRound(rect("target",1910,28,64,64),32,"rgba(255,255,255,.78)",6); text("○",1942,60,32,"#fff","center","bold");
+    fit("扣底中...",1024,315,520,58,22,"#fff");
+    text("17",386,275,58,"#fff","center","bold");
+    function avatarBox(a,t1,t2){ const g=ctx.createLinearGradient(a.x,a.y,a.right,a.bottom); g.addColorStop(0,t1); g.addColorStop(1,t2); fillRound(a,3,g); ctx.globalAlpha=.92; ctx.fillStyle="rgba(240,250,255,.92)"; ctx.beginPath(); ctx.arc(a.x+a.w*.5,a.y+a.h*.38,Math.min(a.w,a.h)*.23,0,Math.PI*2); ctx.fill(); ctx.fillStyle="rgba(18,49,71,.58)"; ctx.beginPath(); ctx.ellipse(a.x+a.w*.5,a.y+a.h*.82,a.w*.38,a.h*.26,0,Math.PI,Math.PI*2); ctx.fill(); ctx.globalAlpha=1; strokeRound(rect("as",a.x+4,a.y+4,a.w-8,a.h-8),2,"rgba(255,255,255,.72)",3); }
+    function player(x,y,side,money,t1,t2){ fillRound(rect("p",x,y,120,170),4,"rgba(34,35,34,.76)"); const a=rect("a",x+9,y+28,102,102); avatarBox(a,t1,t2); fillRound(rect("t",x-5,y,42,32),3,"#ee604a"); text("庄",x+16,y+16,24,"#fff","center","bold"); fillRound(rect("s",x+36,y,54,32),2,"#d96442"); text(side,x+63,y+16,20,"#fff4c8","center","bold"); fit(money,x+60,y+142,112,28,12,"#fff");}
+    player(84,210,"对手","1263万","#526d8d","#20314f"); player(1828,210,"对手","100万","#f2e7dd","#af9ad4");
+    fillRound(rect("top",1218,22,132,170),4,"rgba(22,55,72,.85)"); avatarBox(rect("topa",1230,32,108,92),"#a8c8f0","#3b72a4"); fillRound(rect("tag",1223,22,122,32),2,"#347adb"); text("队友",1284,38,22,"#fff","center","bold"); text("270万",1284,164,28,"#fff","center","bold");
+    ctx.globalAlpha=.18; text("董事会升级",410,505,44,"#083c40","center","bold"); ctx.globalAlpha=1;
+    fillRound(rect("chat",1862,440,58,58),29,"rgba(33,45,63,.9)"); text("▣",1891,469,30,"#dbe9ff","center","bold"); fillRound(rect("god",1866,540,54,54),27,"#293445"); text("福",1893,567,25,"#ffd77a","center","bold");
+    const step=(1828-74)/(hand.length-1); hand.forEach((c,i)=>drawCard(rect("h",90+i*step,596,74,252),c));
+    const bar=ctx.createLinearGradient(0,840,0,945); bar.addColorStop(0,"rgba(12,76,86,.92)"); bar.addColorStop(1,"rgba(7,48,61,.95)"); ctx.fillStyle=bar; ctx.fillRect(88,840,1840,104);
+    fit("朝阳董事",330,886,180,31,14,"#fff"); text("Ⓦ+  585万",520,886,28,"#fff","center","bold"); text("上轮",1660,886,25,"#fff","center","bold"); fillRound(rect("r",1720,852,210,58),2,"rgba(54,83,99,.82)"); fit("记牌器 54局",1825,881,198,26,12,"#e7f0f6");
+  </script>
+</body>
+</html>
